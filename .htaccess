@@ -1,0 +1,2 @@
+RewriteEngine on
+RewriteRule (.*)\.php	prephp/prephp.php?script=$1 [QSA,L]

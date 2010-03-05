@@ -3,20 +3,34 @@
 	
 	require_once 'config.php';
 	
+	{// GATHER different infos
+	
 	// set $prephp_ variables, unset GETs. (So the scripts don't get prephp stuff)
 	$prephp_path = $_GET['prephp_path']; unset($_GET['prephp_path']);
-	$prephp_request_uri = $_GET['prephp_request_uri']; unset($_GET['prephp_request_uri']);
-	$prephp_http_host = $_GET['prephp_http_host']; unset($_GET['prephp_http_host']);
-	$prephp_request_filename = $_GET['prephp_request_filename']; unset($_GET['prephp_request_filename']);
+	$prephp_request_uri = $_SERVER['REQUEST_URI'];
 	
-	// first of all: exclude excluded files
+	// construct server part (http://example.org:110/)
+	$prephp_server = 'http';
+	if (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] == 'on') {
+		$prephp_server .= 's';
+	}
+	$prephp_server .= "://" . $_SERVER['SERVER_NAME'];
+	if ($_SERVER['SERVER_PORT'] != '80') {
+		$prephp_server .= ':'.$_SERVER['SERVER_PORT'];
+	}
+	
+	$prephp_url = $prephp_server.$prephp_request_uri;
+	
+	}// GATHER END
+	
 	foreach ($prephp_config['exclude'] as $prephp_exclude) {
 		if (strpos($prephp_path, $prephp_exclude) === 0) { // exclude this file
-			if	(file_exists($prephp_config['htaccess_location'].$prephp_path)) {
+			if (file_exists($prephp_config['htaccess_location'].$prephp_path)) {
 				require $prephp_config['htaccess_location'].$prephp_path;
 			}
 			else {
-				echo '404'; // Throw 404 error
+				header($_SERVER['SERVER_PROTOCOL']." 404 Not Found");
+				echo '404';
 			}
 			
 			die(); // No further execution of this script
@@ -26,13 +40,14 @@
 	$prephp_file = $prephp_config['htaccess_location'].$prephp_config['file_location'].$prephp_path;
 	
 	if(!file_exists($prephp_file)) {
-		echo '404'; // TODO: Header, How can we find Apaches error pages?
-		
+		header($_SERVER['SERVER_PROTOCOL']." 404 Not Found");
+		echo '404';
 		die();
 	}
 	
 	// Now everything's okay
 	
 	echo "<pre>";
-	
+
+	echo "This file was executed via prephp";
 ?>

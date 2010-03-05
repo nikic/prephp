@@ -1,2 +1,9 @@
 RewriteEngine on
-RewriteRule (.*)\.php	prephp/prephp.php?script=$1 [QSA,L]
+
+# prephp gets the variables
+# prefixed with prephp_
+# path: relative to this .htaccess
+# request_uri: request uri (everything after the host)
+# http_host: host, e.g. "localhost"
+# request_filename: requested filename, e.g. "D:/xampp/htdocs/prephp/prephp/config.php"
+RewriteRule ^(.*\.php[45]?)$ prephp/prephp.php?prephp_path=$1&prephp_request_uri=%{REQUEST_URI}&prephp_http_host=%{HTTP_HOST}&prephp_request_filename=%{REQUEST_FILENAME} [QSA,L]

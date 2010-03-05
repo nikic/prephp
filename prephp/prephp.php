@@ -49,5 +49,5 @@
 	
 	echo "<pre>";
 
-	echo "This file was executed via prephp";
+	echo "This file was preprocessed with prephp";
 ?>

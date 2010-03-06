@@ -3,6 +3,9 @@
 	
 	require_once 'config.php';
 	
+	if(!isset($_GET['prephp_path']))
+		die();
+	
 	{// GATHER different infos
 	
 	// set $prephp_ variables, unset GETs. (So the scripts don't get prephp stuff)

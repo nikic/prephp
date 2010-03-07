@@ -126,7 +126,7 @@
 				return;
 			}
 			
-			$after = $this->splice($i + 1, $this->count() - 1);
+			$after = $this->splice($i, $this->count() - 1);
 			
 			$this->insertStreamAtEnd($tokenStream);
 			

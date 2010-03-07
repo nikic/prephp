@@ -1,6 +1,4 @@
 <?php
-	error_reporting(E_ALL | E_STRICT);
-	
 	/*
 		How it works:
 		Everything Core does as is, is to get passed the source of a file

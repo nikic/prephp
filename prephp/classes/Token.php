@@ -1,6 +1,4 @@
 <?php
-	error_reporting(E_ALL | E_STRICT);
-	
 	// define undefined tokens (php evolves...)
 	if(!defined('T_ML_COMMENT'))
 		define('T_ML_COMMENT', T_COMMENT);

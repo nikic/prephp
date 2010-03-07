@@ -1,13 +1,5 @@
 <?php
-	error_reporting(E_ALL | E_STRICT);
-	
-	require_once 'Core.php';
-	
-	function lineHardcoder($token) {
-		return (string)$token->getLine();
-	}
-	
-	function lambda($tokenStream, $i) {
+	function prephp_lambda($tokenStream, $i) {
 		$functionToken = $i;
 		
 		$i = $tokenStream->skipWhiteSpace($i);
@@ -82,33 +74,5 @@
 				),
 			)
 		);
-		
 	}
-	
-	$source = <<<'FOO'
-html
-<?php
-	function lambda($callback) {
-		return call_user_func($callback);
-	}
-	
-	echo __LINE__;
-	echo lambda(
-		function() {
-			return 1;
-		}
-	);
-?>
-html
-FOO;
-	
-	$core = new Prephp_Core(token_get_all($source));
-	
-	$core->addTokenCompileListener(Prephp_Token::T_LINE, 'lineHardcoder');
-	$core->addTokenListener(Prephp_Token::T_FUNCTION, 'lambda');
-	
-	echo "<pre>";
-	$out = $core->compile();
-	echo htmlspecialchars($out);
-	file_put_contents('test_core_cache.php', $out);
 ?>

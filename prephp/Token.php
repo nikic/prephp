@@ -12,6 +12,8 @@
 		define('T_DIR', 379);
 	if(!defined('T_GOTO'))
 		define('T_GOTO', 333);
+	if(!defined('T_NAMESPACE'))
+		define('T_NAMESPACE', 377);
 	if(!defined('T_NS_C'))
 		define('T_NS_C', 378);
 	if(!defined('T_USE'))
@@ -137,6 +139,7 @@
 		const T_ML_COMMENT		= T_ML_COMMENT;
 		const T_MOD_EQUAL		= T_MOD_EQUAL;
 		const T_MUL_EQUAL		= T_MUL_EQUAL;
+		const T_NAMESPACE		= T_NAMESPACE;
 		const T_NS_C			= T_NS_C;
 		const T_NEW				= T_NEW;
 		const T_NUM_STRING		= T_NUM_STRING;

@@ -56,10 +56,19 @@
 		
 		// insert function code
 		$semicolonToken = $tokenStream->findPreviousToken($functionToken, Prephp_Token::T_SEMICOLON);
-		$tokenStream->insertStreamAt($semicolonToken + 1,
+		$tokenStream->insertStreamAt(++$semicolonToken,
+			array(
+				new Prephp_Token(
+					Prephp_Token::T_WHITESPACE,
+					"\n",
+					-1
+				),
+			)
+		);
+		$tokenStream->insertStreamAt(++$semicolonToken,
 			$functionStream
 		);
-		$tokenStream->insertStreamAt($semicolonToken + 2,
+		$tokenStream->insertStreamAt(++$semicolonToken,
 			array(
 				new Prephp_Token(
 					Prephp_Token::T_WHITESPACE,
@@ -100,6 +109,6 @@ FOO;
 	
 	echo "<pre>";
 	$out = $core->compile();
-	echo $out;
+	echo htmlspecialchars($out);
 	file_put_contents('test_core_cache.php', $out);
 ?>

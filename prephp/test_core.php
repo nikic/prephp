@@ -40,7 +40,7 @@
 		
 		$functionEnd = $i;
 		// now we have the whole function between $functionStart and $functionEnd
-		$functionStream = $tokenStream->sliceSubStream($functionToken, $functionEnd);
+		$functionStream = $tokenStream->splice($functionToken, $functionEnd);
 		
 		$functionName = 'prephp_lambda_'.md5(mt_rand(0, mt_getrandmax()));
 		// insert callback as string

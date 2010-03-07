@@ -10,5 +10,6 @@
 	
 	$prephp_config['exclude'] = array( // excludes everything that *starts* with these strings
 		'playground',
+		'prephp',
 	);
 ?>

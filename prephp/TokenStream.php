@@ -80,7 +80,7 @@
 						$line
 					);
 					
-					// cant use $token[2], cause it need php version 5.?
+					// cant use $token[2], cause it needs php version 5.?
 					$line += substr_count($token[1], "\n");
 				}
 			}
@@ -127,13 +127,22 @@
 			return $i;
 		}
 		
+		public function splice($from, $to) {
+			$tokenStream = new Prephp_Token_Stream();
+			$tokenStream->insertStreamAtEnd(
+				array_splice($this->tokens, $from, $to - $from + 1, array())
+			);
+			
+			return $tokenStream;
+		}
+		
 		public function insertStreamAt($i, $tokenStream) {
 			if ($i == $this->count() - 1) {
 				$this->insertStreamAtEnd($tokenStream);
 				return;
 			}
 			
-			$after = $this->sliceSubStream($i + 1, $this->count() - 1);
+			$after = $this->splice($i + 1, $this->count() - 1);
 			
 			$this->insertStreamAtEnd($tokenStream);
 			
@@ -150,15 +159,6 @@
 		
 		public function insertAtEnd(Prephp_Token $token) {
 			$this->tokens[] = $token;
-		}
-		
-		public function sliceSubStream($from, $to) {
-			$tokenStream = new Prephp_Token_Stream();
-			$tokenStream->insertStreamAtEnd(
-				array_splice($this->tokens, $from, $to - $from + 1, array())
-			);
-			
-			return $tokenStream;
 		}
 		
 		public function count() {

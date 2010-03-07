@@ -32,7 +32,14 @@
 	
 	$filename = $core->buildFile($prephp_path);
 	
-	require $filename;
+	if($filename === false) {
+		header($_SERVER['SERVER_PROTOCOL']." 404 Not Found");
+		echo '404';
+		die();
+	}
+	else {
+		require $filename;
+	}
 	
 	
 	/*{// GATHER different infos

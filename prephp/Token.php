@@ -1,6 +1,22 @@
 <?php
 	error_reporting(E_ALL | E_STRICT);
 	
+	// define undefined tokens (php evolves...)
+	if(!defined('T_ML_COMMENT'))
+		define('T_ML_COMMENT', T_COMMENT);
+	if(!defined('T_OLD_FUNCTION'))
+		define('T_OLD_FUNCTION', 1000001); // TODO: Find out correct number
+		
+	// need to define these newer tokens, in case an older PHP Version is used
+	if(!defined('T_DIR'))
+		define('T_DIR', 379);
+	if(!defined('T_GOTO'))
+		define('T_GOTO', 333);
+	if(!defined('T_NS_C'))
+		define('T_NS_C', 378);
+	if(!defined('T_USE'))
+		define('T_USE', 340);
+	
 	class Prephp_Token
 	{
 		protected $tokId; // Token Identifier. Something like T_VARIABLE

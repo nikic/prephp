@@ -17,7 +17,7 @@
 		 * @param	string		$cacheDirectory
 		 * @param	callback	$buildCallback
 		 */
-		public function __construct ($sourceDirectory, $cacheDirectory, $buildCallback) {
+		public function __construct($sourceDirectory, $cacheDirectory, $buildCallback) {
 			if (!is_callable($buildCallback))
 				throw new Exception ('Invalid Callback');
 			
@@ -32,17 +32,18 @@
 		 * @param	string		$filename
 		 * @return	string|false	filename of cached version or false if $filename doesn't exist
 		 */
-		public function get ($filename) {
+		public function get($filename) {
 			// check if sourcefile exists
 			if (!file_exists($this->getSourceFilename($filename)))
 				return false;
 			
 			// check if cache needs to be rebuild
-			if ($this->needRebuild($filename))
+			if ($this->needRebuild($filename)) {
 				call_user_func_array($this->buildCallback, array(
 					$this->getSourceFilename($filename),
 					$this->getCacheFilename($filename)
 				));
+			}
 			
 			
 			return $this->getCacheFilename($filename);
@@ -54,7 +55,7 @@
 		 * @param	string		$filename
 		 * @return	boolean
 		 */
-		protected function needRebuild ($filename) {
+		protected function needRebuild($filename) {
 			// check if cached version doesn't exist
 			if (!file_exists($this->getCacheFilename($filename)))
 				return true;
@@ -72,7 +73,7 @@
 		 * @param	string		$filename
 		 * @return	string
 		 */
-		public function getSourceFilename ($filename) {
+		public function getSourceFilename($filename) {
 			return $this->sourceDirectory.$filename;
 		}
 		
@@ -82,7 +83,7 @@
 		 * @param	string		$filename
 		 * @return	string
 		 */
-		public function getCacheFilename ($filename) {
+		public function getCacheFilename($filename) {
 			return $this->cacheDirectory.$filename;
 		}
 	}

@@ -24,13 +24,16 @@
 		}
 	}
 	
-	require_once 'Core.php';
+	require_once 'classes/Core.php';
 	
 	$core = Prephp_Core::get();
 	$core->createCache(
 		$prephp_config['htaccess_location'].$prephp_config['source_location'],
 		$prephp_config['htaccess_location'].$prephp_config['cache_location']
 	);
+	
+	// Now the Listeners should be registered
+	require_once 'listeners.php';
 	
 	$filename = $core->buildFile($prephp_path);
 	

@@ -1,12 +1,41 @@
 <?php
 	error_reporting(E_ALL |E_STRICT);
 	
-	require_once 'config.php';
-	
 	if(!isset($_GET['prephp_path']))
 		die();
 	
-	{// GATHER different infos
+	require_once 'config.php';
+	
+	$prephp_path = $_GET['prephp_path']; unset($_GET['prephp_path']);
+	
+	foreach ($prephp_config['exclude'] as $prephp_exclude) {
+		if (strpos($prephp_path, $prephp_exclude) === 0) { // exclude this file
+			if (file_exists($prephp_config['htaccess_location'].$prephp_path)) {
+				require $prephp_config['htaccess_location'].$prephp_path;
+			}
+			else {
+				header($_SERVER['SERVER_PROTOCOL']." 404 Not Found");
+				echo '404';
+			}
+			
+			die(); // No further execution of this script
+		}
+	}
+	
+	require_once 'Core.php';
+	
+	$core = Prephp_Core::get();
+	$core->createCache(
+		$prephp_config['htaccess_location'].$prephp_config['source_location'],
+		$prephp_config['htaccess_location'].$prephp_config['cache_location']
+	);
+	
+	$filename = $core->buildFile($prephp_path);
+	
+	require $filename;
+	
+	
+	/*{// GATHER different infos
 	
 	// set $prephp_ variables, unset GETs. (So the scripts don't get prephp stuff)
 	$prephp_path = $_GET['prephp_path']; unset($_GET['prephp_path']);
@@ -48,9 +77,6 @@
 		die();
 	}
 	
-	// Now everything's okay
+	// Now everything's okay*/
 	
-	echo "<pre>";
-
-	echo "This file was preprocessed with prephp";
 ?>

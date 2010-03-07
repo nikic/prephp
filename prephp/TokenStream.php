@@ -21,7 +21,7 @@
 	
 	class Prephp_Token_Stream implements ArrayAccess, Countable, SeekableIterator
 	{
-		protected $tokens;
+		protected $tokens = array();
 		
 		protected static $customTokens = array(
 			'(' => 'T_OPEN_ROUND',
@@ -57,7 +57,12 @@
 		protected $pos = 0;
 		
 		// expects token array in token_get_all notation
-		public function __construct($tokenArray) {
+		// or nothing => empty TokenStream
+		public function __construct($tokenArray = null) {
+			if ($tokenArray === null) {
+				return;
+			}
+			
 			$line = 1;
 			
 			foreach ($tokenArray as $token) {
@@ -79,6 +84,81 @@
 					$line += substr_count($token[1], "\n");
 				}
 			}
+		}
+		
+		// returns the next non whitespace index
+		public function skipWhiteSpace($i) {
+			$numof = $this->count();
+			do {
+				++$i;
+			}
+			while ($i < $numof && $this->tokens[$i]->is(Prephp_Token::T_WHITESPACE));
+			
+			if ($i == $numof)
+				return false;
+			
+			return $i;
+		}
+		
+		// Finds the previous token of type $tokId
+		public function findPreviousToken($i, $tokId) {
+			do {
+				$i--;
+			}
+			while ($i > 0 && !$this->tokens[$i]->is($tokId));
+			
+			if ($i == 0 && !$this->token[$i]->is($tokId))
+				return false;
+			
+			return $i;
+		}
+		
+		// Finds the next token of type $tokId
+		public function findNextToken($i, $tokId) {
+			$numof = $this->count();
+			do {
+				$i++;
+			}
+			while ($i < $numof && !$this->tokens[$i]->is($tokId));
+			
+			if($i == $numof)
+				return false;
+			
+			return $i;
+		}
+		
+		public function insertStreamAt($i, $tokenStream) {
+			if ($i == $this->count() - 1) {
+				$this->insertStreamAtEnd($tokenStream);
+				return;
+			}
+			
+			$after = $this->sliceSubStream($i + 1, $this->count() - 1);
+			
+			$this->insertStreamAtEnd($tokenStream);
+			
+			if (isset($after)) {
+				$this->insertStreamAtEnd($after);
+			}
+		}
+		
+		public function insertStreamAtEnd($tokenStream) {			
+			foreach ($tokenStream as $token) {
+				$this->tokens[] = $token;
+			}
+		}
+		
+		public function insertAtEnd(Prephp_Token $token) {
+			$this->tokens[] = $token;
+		}
+		
+		public function sliceSubStream($from, $to) {
+			$tokenStream = new Prephp_Token_Stream();
+			$tokenStream->insertStreamAtEnd(
+				array_splice($this->tokens, $from, $to - $from + 1, array())
+			);
+			
+			return $tokenStream;
 		}
 		
 		public function count() {

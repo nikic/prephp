@@ -74,7 +74,7 @@
 			return $this->cache->get($filename);
 		}
 		
-		public function addTokenListener($tokId, $callback) {
+		public function registerTokenListener($tokId, $callback) {
 			if (!is_callable($callback)) {
 				throw new InvalidArgumentException('Callback not callable!');
 			}
@@ -82,7 +82,7 @@
 			$this->tokenListeners[$tokId][] = $callback;
 		}
 		
-		public function addTokenCompileListener($tokId, $callback) {
+		public function registerTokenCompileListener($tokId, $callback) {
 			if (!is_callable($callback)) {
 				throw new InvalidArgumentException('Callback not callable!');
 			}

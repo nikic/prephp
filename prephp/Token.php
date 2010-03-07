@@ -42,7 +42,7 @@
 		const T_MULT			= 1015;
 		const T_DIV				= 1016;
 		const T_QUESTION		= 1017;
-		const R_EXCLAMATION		= 1018;
+		const T_EXCLAMATION		= 1018;
 		const T_COLON			= 1019;
 		const T_DOUBLE_QUOTES	= 1020;
 		const T_AT				= 1021;

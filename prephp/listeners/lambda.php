@@ -11,7 +11,7 @@
 		
 		// first get the function source code (+ parameters)
 		$depth = 0;
-		do {
+		do { // TODO: include findCorrespondingToken in Token_Stream
 			$i_open = $tokenStream->findNextToken($i, Prephp_Token::T_OPEN_CURLY);
 			$i_close = $tokenStream->findNextToken($i, Prephp_Token::T_CLOSE_CURLY);
 			
@@ -32,35 +32,31 @@
 		
 		$functionEnd = $i;
 		// now we have the whole function between $functionStart and $functionEnd
-		$functionStream = $tokenStream->splice($functionToken, $functionEnd);
+		$functionStream = $tokenStream->extractStream($functionToken, $functionEnd);
 		
-		$functionName = 'prephp_lambda_'.md5(mt_rand(0, mt_getrandmax()));
+		$functionName = 'prephp_lambda_'.md5(mt_rand(0, mt_getrandmax())); // TODO: Kinda Prephp_Core::uniqueIdentifier()
 		// insert callback as string
-		$tokenStream->insertStreamAt($functionToken,
-			array(
-				new Prephp_Token(
-					Prephp_Token::T_CONSTANT_ENCAPSED_STRING,
-					"'" . $functionName . "'",
-					$functionStream[0]->getLine()
-				),
+		$tokenStream->insertToken($functionToken,
+			new Prephp_Token(
+				Prephp_Token::T_CONSTANT_ENCAPSED_STRING,
+				"'" . $functionName . "'",
+				$functionStream[0]->getLine()
 			)
 		);
 		
 		// insert function code
 		$semicolonToken = $tokenStream->findPreviousToken($functionToken, Prephp_Token::T_SEMICOLON);
-		$tokenStream->insertStreamAt(++$semicolonToken,
-			array(
-				new Prephp_Token(
-					Prephp_Token::T_WHITESPACE,
-					"\n",
-					-1
-				),
+		$tokenStream->insertToken(++$semicolonToken,
+			new Prephp_Token(
+				Prephp_Token::T_WHITESPACE,
+				"\n",
+				-1
 			)
 		);
-		$tokenStream->insertStreamAt(++$semicolonToken,
+		$tokenStream->insertStream(++$semicolonToken,
 			$functionStream
 		);
-		$tokenStream->insertStreamAt(++$semicolonToken,
+		$tokenStream->insertStream(++$semicolonToken,
 			array(
 				new Prephp_Token(
 					Prephp_Token::T_WHITESPACE,

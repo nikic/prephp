@@ -109,44 +109,65 @@
 			return $i;
 		}
 		
-		public function splice($from, $to) {
+		// returns a Prephp_Token_Stream containing elements $from to $to
+		// and *removes* it from the original stream
+		public function extractStream($from, $to) {
 			$tokenStream = new Prephp_Token_Stream();
-			$tokenStream->insertStreamAtEnd(
+			$tokenStream->appendStream(
 				array_splice($this->tokens, $from, $to - $from + 1, array())
 			);
 			
 			return $tokenStream;
 		}
 		
-		public function insertStreamAt($i, $tokenStream) {
+		// inserts stream at $i, moving all following tokens down
+		public function insertStream($i, $tokenStream) {
 			if ($i == $this->count() - 1) {
-				$this->insertStreamAtEnd($tokenStream);
+				$this->appendStream($tokenStream);
 				return;
 			}
 			
-			$after = $this->splice($i, $this->count() - 1);
+			// remove following stream to append later
+			$after = $this->extractStream($i, $this->count() - 1);
 			
-			$this->insertStreamAtEnd($tokenStream);
+			$this->appendStream($tokenStream);
 			
 			if (isset($after)) {
-				$this->insertStreamAtEnd($after);
+				$this->appendStream($after);
 			}
 		}
 		
-		public function insertStreamAtEnd($tokenStream) {			
+		// appends stream
+		public function appendStream($tokenStream) {			
 			foreach ($tokenStream as $token) {
 				$this->tokens[] = $token;
 			}
 		}
 		
-		public function insertAtEnd(Prephp_Token $token) {
+		// need extractToken?
+		
+		// inserts token at $i moving all other tokens down
+		public function insertToken($i, Prephp_Token $token) {
+			$this->insertStream($i, // maybe implement this more nice?
+				array(
+					$token
+				)
+			);
+		}
+		
+		// appends token to stream
+		public function appendToken(Prephp_Token $token) {
 			$this->tokens[] = $token;
 		}
 		
+		
+		
+		// interface Countable
 		public function count() {
 			return count($this->tokens);
 		}
 		
+		// interface SeekableIterator
 		public function rewind() {
 			$this->pos = 0;
 		}
@@ -178,6 +199,7 @@
 			}
 		}
 		
+		// interface ArrayAccess
 		public function offsetExists($offset)
 		{
 			return isset($this->tokens[$offset]);

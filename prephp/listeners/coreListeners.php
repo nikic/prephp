@@ -1,32 +1,84 @@
 <?php
-	function prephp_lineHardcoder($token) {
+	function prephp_LINE($token) {
 		return (string)$token->getLine();
 	}
 	
-	function prephp_require_listener($tokenStream, $i) {
-		/*
-		TODO: Rethink the whole require thing
-		It would be best to define() __FILE__ at the beginning of every script
-		and then plate __DIR__ . in front of all file-function calls
-		Problem is: You have to check whether the file is local or not
-		*/
-		
-		$tokenStream[$i] = new Prephp_Token(
-			Prephp_Token::T_STRING,
-			'prephp_require',
-			$tokenStream[$i]->getLine()
-		);
-		
-		if($tokenStream[$i+1]->is(Prephp_Token::T_OPEN_ROUND)) // require(), so its like a function
-			return;
-			
-		// otherwise insert ( and )
-		$i = $tokenStream->skipWhiteSpace($i);
-		$tokenStream->insertToken($i,
-			new Prephp_Token(
-				Prephp_Token::T_OPEN_ROUND,
-				'(',
+	function prephp_FILE($token) {
+		return 'prephp_getFileName(__FILE__)';
+	}
+	
+	function prephp_real_FILE($token) {
+		if ($token->getContent() == 'PREPHP__FILE__') {
+			return '__FILE__';
+		}
+	}
+	
+	function prephp_DIR_simulator($tokenStream, $i) {
+		if ($tokenStream[$i]->getContent() == '__DIR__') {
+			$tokenStream[$i] = new Prephp_Token(
+				Prephp_Token::T_DIR,
+				'__DIR__',
 				$tokenStream[$i]->getLine()
+			);
+		}
+	}
+	
+	function prephp_DIR($tokenStream, $i) {		
+		$line = $tokenStream[$i]->getLine();
+		$tokenStream->extractStream($i, $i); // remove __DIR__
+		$tokenStream->insertStream($i,
+			array(
+				new Prephp_Token(
+					Prephp_Token::T_STRING,
+					'dirname',
+					$line
+				),
+				new Prephp_Token(
+					Prephp_Token::T_OPEN_ROUND,
+					'(',
+					$line
+				),
+				new Prephp_Token(
+					Prephp_Token::T_FILE,
+					'__FILE__',
+					$line
+				),
+				new Prephp_Token(
+					Prephp_Token::T_CLOSE_ROUND,
+					')',
+					$line
+				),
+			)
+		);
+	}
+	
+	function prephp_include($tokenStream, $i) {
+		$i = $tokenStream->skipWhitespace($i);
+		if ($tokenStream[$i]->is(Prephp_Token::T_OPEN_ROUND))
+			++$i;
+		
+		$tokenStream->insertStream($i,
+			array(
+				new Prephp_Token(
+					Prephp_Token::T_STRING,
+					'prephp_prepareInclude',
+					$tokenStream[$i]->getLine()
+				),
+				new Prephp_Token(
+					Prephp_Token::T_OPEN_ROUND,
+					'(',
+					$tokenStream[$i]->getLine()
+				),
+				new Prephp_Token(
+					Prephp_Token::T_STRING,
+					'PREPHP__FILE__',
+					$tokenStream[$i]->getLine()
+				),
+				new Prephp_Token(
+					Prephp_Token::T_COMMA,
+					',',
+					$tokenStream[$i]->getLine()
+				),
 			)
 		);
 		

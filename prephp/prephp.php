@@ -7,6 +7,11 @@
 	
 	require_once 'config.php';
 	
+	// first prepare some vars
+	$prephp_base_dir = realpath(dirname(__FILE__) . DIRECTORY_SEPARATOR . $prephp_config['htaccess_location']) . DIRECTORY_SEPARATOR;
+	$prephp_source_location = realpath($prephp_base_dir . $prephp_config['source_location']) . DIRECTORY_SEPARATOR;
+	$prephp_cache_location = realpath($prephp_base_dir . $prephp_config['cache_location']) . DIRECTORY_SEPARATOR;
+	
 	$prephp_path = $_GET['prephp_path']; unset($_GET['prephp_path']);
 	
 	// exclude files
@@ -28,11 +33,11 @@
 	
 	$core = Prephp_Core::get();
 	$core->createCache(
-		$prephp_config['htaccess_location'].$prephp_config['source_location'],
-		$prephp_config['htaccess_location'].$prephp_config['cache_location']
+		$prephp_source_location,
+		$prephp_cache_location
 	);
 	
-	// Now the Listeners should be registered
+	// Now the listeners should be registered
 	require_once 'listeners.php';
 	
 	$filename = $core->buildFile($prephp_path);
@@ -43,6 +48,7 @@
 		die();
 	}
 	else {
+		require_once 'functions.php'; // this file defines some functions used run-time
 		require $filename;
 	}	
 ?>

@@ -109,6 +109,9 @@
 			return $i;
 		}
 		
+		// TODO: findComplementaryBracket
+		// TODO: findPreviousEndOfStatement
+		
 		// returns a Prephp_Token_Stream containing elements $from to $to
 		// and *removes* it from the original stream
 		public function extractStream($from, $to) {

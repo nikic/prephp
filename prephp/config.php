@@ -1,7 +1,7 @@
 <?php
 	$prephp_config = array();
 	
-	// Path of .htaccess file, relative to this file
+	// Path of .htaccess file, relative to the prephp.php file
 	$prephp_config['htaccess_location'] = '../';
 	
 	// All paths relative to prephp .htaccess file

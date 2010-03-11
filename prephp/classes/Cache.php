@@ -18,8 +18,17 @@
 		 * @param	callback	$buildCallback
 		 */
 		public function __construct($sourceDirectory, $cacheDirectory, $buildCallback) {
-			if (!is_callable($buildCallback))
-				throw new Exception ('Invalid Callback');
+			if (!is_callable($buildCallback)) {
+				throw new Exception('Invalid Callback');
+			}
+				
+			if (!is_readable($sourceDirectory)) {
+				throw new Exception('Source Directory not readable');
+			}
+			
+			if (!is_writeable($cacheDirectory)) {
+				throw new Exception('Cache Directory not writable');
+			}
 			
 			$this->sourceDirectory = $sourceDirectory;
 			$this->cacheDirectory = $cacheDirectory;

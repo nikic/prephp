@@ -42,14 +42,6 @@
 		protected $tokenCompileListeners;
 		
 		public function createCache($sourceDir, $cacheDir) {
-			if(!is_writable($cacheDir)) {
-				throw new InvalidArgumentException("Cache Directory isn't wirteable");
-			}
-			
-			if(!is_readable($sourceDir)) {
-				throw new InvalidArgumentException("Source Directory isn't readable");
-			}
-			
 			$this->cache = new Prephp_Cache(
 				$sourceDir,
 				$cacheDir,
@@ -62,10 +54,15 @@
 		
 		public function buildCallback($source, $cache) {
 			$sourceCont = file_get_contents($source);
-			if(!$sourceCont) {
+			if (!$sourceCont) {
 				throw new Exception('Could not read source file');
 			}
-			if(!file_put_contents($cache, $this->compile($sourceCont))) {
+			
+			if (!file_exists(dirname($cache)) && !mkdir(dirname($cache), 0777, true)) {
+				throw new Exception('Cache Dir didnt exist and couldnt be created');
+			}
+			
+			if (!file_put_contents($cache, $this->compile($sourceCont))) {
 				throw new Exception('Could not write cache file');
 			}
 		}

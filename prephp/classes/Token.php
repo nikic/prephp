@@ -17,40 +17,72 @@
 	if(!defined('T_USE'))
 		define('T_USE', 340);
 	
+	const T_OPEN_ROUND		= 1001;
+	const T_CLOSE_ROUND 	= 1002;
+	const T_OPEN_SQUARE 	= 1003;
+	const T_CLOSE_SQUARE	= 1004;
+	const T_OPEN_CURLY		= 1005;
+	const T_CLOSE_CURLY		= 1006;
+	const T_SEMICOLON		= 1007;
+	const T_DOT				= 1008;
+	const T_COMMA			= 1009;
+	const T_EQUAL			= 1010;
+	const T_LT				= 1011;
+	const T_GT				= 1012;
+	const T_PLUS			= 1013;
+	const T_MINUS			= 1014;
+	const T_MULT			= 1015;
+	const T_DIV				= 1016;
+	const T_QUESTION		= 1017;
+	const T_EXCLAMATION		= 1018;
+	const T_COLON			= 1019;
+	const T_DOUBLE_QUOTES	= 1020;
+	const T_AT				= 1021;
+	const T_AMP				= 1022;
+	const T_PERCENT			= 1023;
+	const T_PIPE			= 1024;
+	const T_DOLLAR			= 1025;
+	const T_CARET			= 1026;
+	const T_TILDE			= 1027;
+	const T_BACKTICK		= 1028;
+	
 	class Prephp_Token
 	{
 		protected $tokId; // Token Identifier. Something like T_VARIABLE
 		protected $content; // Token Content. Something like "$var"
 		protected $line; // Line of Token, to throw Exceptions. Something like 7
 		
-		const T_OPEN_ROUND		= 1001;
-		const T_CLOSE_ROUND 	= 1002;
-		const T_OPEN_SQUARE 	= 1003;
-		const T_CLOSE_SQUARE	= 1004;
-		const T_OPEN_CURLY		= 1005;
-		const T_CLOSE_CURLY		= 1006;
-		const T_SEMICOLON		= 1007;
-		const T_DOT				= 1008;
-		const T_COMMA			= 1009;
-		const T_EQUAL			= 1010;
-		const T_LT				= 1011;
-		const T_GT				= 1012;
-		const T_PLUS			= 1013;
-		const T_MINUS			= 1014;
-		const T_MULT			= 1015;
-		const T_DIV				= 1016;
-		const T_QUESTION		= 1017;
-		const T_EXCLAMATION		= 1018;
-		const T_COLON			= 1019;
-		const T_DOUBLE_QUOTES	= 1020;
-		const T_AT				= 1021;
-		const T_AMP				= 1022;
-		const T_PERCENT			= 1023;
-		const T_PIPE			= 1024;
-		const T_DOLLAR			= 1025;
-		const T_CARET			= 1026;
-		const T_TILDE			= 1027;
-		const T_BACKTICK		= 1028;
+		// I define all the tokens here again, cause some could think
+		// it was cleaner to write Prephp_Token::T_DOT instead of T_DOT
+		// This is DEPRECATED and may be removed
+		const T_OPEN_ROUND		= T_OPEN_ROUND;
+		const T_CLOSE_ROUND 	= T_CLOSE_ROUND;
+		const T_OPEN_SQUARE 	= T_OPEN_SQUARE;
+		const T_CLOSE_SQUARE	= T_CLOSE_SQUARE;
+		const T_OPEN_CURLY		= T_OPEN_CURLY;
+		const T_CLOSE_CURLY		= T_CLOSE_CURLY;
+		const T_SEMICOLON		= T_SEMICOLON;
+		const T_DOT				= T_DOT;
+		const T_COMMA			= T_COMMA;
+		const T_EQUAL			= T_EQUAL;
+		const T_LT				= T_LT;
+		const T_GT				= T_GT;
+		const T_PLUS			= T_PLUS;
+		const T_MINUS			= T_MINUS;
+		const T_MULT			= T_MULT;
+		const T_DIV				= T_DIV;
+		const T_QUESTION		= T_QUESTION;
+		const T_EXCLAMATION		= T_EXCLAMATION;
+		const T_COLON			= T_COLON;
+		const T_DOUBLE_QUOTES	= T_DOUBLE_QUOTES;
+		const T_AT				= T_AT;
+		const T_AMP				= T_AMP;
+		const T_PERCENT			= T_PERCENT;
+		const T_PIPE			= T_PIPE;
+		const T_DOLLAR			= T_DOLLAR;
+		const T_CARET			= T_CARET;
+		const T_TILDE			= T_TILDE;
+		const T_BACKTICK		= T_BACKTICK;
 		const T_ABSTRACT		= T_ABSTRACT;
 		const T_AND_EQUAL		= T_AND_EQUAL;
 		const T_ARRAY			= T_ARRAY;
@@ -198,8 +230,9 @@
 			return $this->line;
 		}
 		
+		// $tokId may be a T_ or an array(T_,T_,...)
 		public function is($tokId) {
-			return $tokId==$this->tokId;
+			return $tokId==$this->tokId || (is_array($tokId) && in_array($this->tokId, $tokId));
 		}
 	}
 ?>

@@ -6,34 +6,34 @@
 		protected $tokens = array();
 		
 		protected static $customTokens = array(
-			'(' => Prephp_Token::T_OPEN_ROUND,
-			')' => Prephp_Token::T_CLOSE_ROUND,
-			'[' => Prephp_Token::T_OPEN_SQUARE,
-			']' => Prephp_Token::T_CLOSE_SQUARE,
-			'{' => Prephp_Token::T_OPEN_CURLY,
-			'}' => Prephp_Token::T_CLOSE_CURLY,
-			';' => Prephp_Token::T_SEMICOLON,
-			'.' => Prephp_Token::T_DOT,
-			',' => Prephp_Token::T_COMMA,
-			'=' => Prephp_Token::T_EQUAL,
-			'<' => Prephp_Token::T_LT,
-			'>' => Prephp_Token::T_GT,
-			'+' => Prephp_Token::T_PLUS,
-			'-' => Prephp_Token::T_MINUS,
-			'*' => Prephp_Token::T_MULT,
-			'/' => Prephp_Token::T_DIV,
-			'?' => Prephp_Token::T_QUESTION,
-			'!' => Prephp_Token::T_EXCLAMATION,
-			':' => Prephp_Token::T_COLON,
-			'"' => Prephp_Token::T_DOUBLE_QUOTES,
-			'@' => Prephp_Token::T_AT,
-			'&' => Prephp_Token::T_AMP,
-			'%' => Prephp_Token::T_PERCENT,
-			'|' => Prephp_Token::T_PIPE,
-			'$' => Prephp_Token::T_DOLLAR,
-			'^' => Prephp_Token::T_CARET,
-			'~' => Prephp_Token::T_TILDE,
-			'`' => Prephp_Token::T_BACKTICK,
+			'(' => T_OPEN_ROUND,
+			')' => T_CLOSE_ROUND,
+			'[' => T_OPEN_SQUARE,
+			']' => T_CLOSE_SQUARE,
+			'{' => T_OPEN_CURLY,
+			'}' => T_CLOSE_CURLY,
+			';' => T_SEMICOLON,
+			'.' => T_DOT,
+			',' => T_COMMA,
+			'=' => T_EQUAL,
+			'<' => T_LT,
+			'>' => T_GT,
+			'+' => T_PLUS,
+			'-' => T_MINUS,
+			'*' => T_MULT,
+			'/' => T_DIV,
+			'?' => T_QUESTION,
+			'!' => T_EXCLAMATION,
+			':' => T_COLON,
+			'"' => T_DOUBLE_QUOTES,
+			'@' => T_AT,
+			'&' => T_AMP,
+			'%' => T_PERCENT,
+			'|' => T_PIPE,
+			'$' => T_DOLLAR,
+			'^' => T_CARET,
+			'~' => T_TILDE,
+			'`' => T_BACKTICK,
 		);
 		
 		protected $pos = 0;
@@ -74,7 +74,7 @@
 			do {
 				++$i;
 			}
-			while ($i < $numof && $this->tokens[$i]->is(Prephp_Token::T_WHITESPACE));
+			while ($i < $numof && $this->tokens[$i]->is(T_WHITESPACE));
 			
 			if ($i == $numof)
 				return false;
@@ -82,26 +82,28 @@
 			return $i;
 		}
 		
-		// Finds the previous token of type $tokId
-		public function findPreviousToken($i, $tokId) {
+		// Finds the previous token of type
+		// T_ or array(T_,T_,...)
+		public function findPreviousToken($i, $tokens) {
 			do {
 				$i--;
 			}
-			while ($i > 0 && !$this->tokens[$i]->is($tokId));
+			while ($i > 0 && !$this->tokens[$i]->is($tokens));
 			
-			if ($i == 0 && !$this->token[$i]->is($tokId))
+			if ($i == 0 && !$this->token[$i]->is($tokens))
 				return false;
 			
 			return $i;
 		}
 		
-		// Finds the next token of type $tokId
-		public function findNextToken($i, $tokId) {
+		// Finds the next token of type
+		// T_ or array(T_,T_,...)
+		public function findNextToken($i, $tokens) {
 			$numof = $this->count();
 			do {
 				$i++;
 			}
-			while ($i < $numof && !$this->tokens[$i]->is($tokId));
+			while ($i < $numof && !$this->tokens[$i]->is($tokens));
 			
 			if($i == $numof)
 				return false;
@@ -109,8 +111,66 @@
 			return $i;
 		}
 		
-		// TODO: findComplementaryBracket
-		// TODO: findPreviousEndOfStatement
+		// Finds previous end of statement
+		public function findPreviousEOS($i) {
+			return $this->findPreviousToken($i,
+				array(
+					T_SEMICOLON,
+					T_CLOSE_CURLY,
+					T_OPEN_TAG,
+				)
+			);
+		}
+		
+		// Finds next end of statement
+		public function findNextEOS($i) {
+			return $this->findNextToken($i,
+				array(
+					T_SEMICOLON,
+					T_CLOSE_TAG,
+				)
+			);
+		}
+		
+		// Finds the complementary bracket
+		public function findComplementaryBracket($i) {
+			if	(!$this->tokens[$i]->is(
+					array(
+						T_OPEN_ROUND,
+						T_OPEN_SQUARE,
+						T_OPEN_CURLY,
+					))
+				) {
+				throw new InvalidArgumentException("TokenStream: Token at $i is not a opening bracket");
+			}
+			
+			$compl = array(
+				T_OPEN_ROUND => T_CLOSE_ROUND,
+				T_OPEN_SQUARE => T_CLOSE_SQUARE,
+				T_OPEN_CURLY => T_CLOSE_CURLY,
+			);
+			
+			$type = $this->tokens[$i]->getTokenId();
+			
+			$depth = 0;
+			do {
+				$i = $this->findNextToken($i, array($type, $compl[$type]));
+				
+				if ($i === false) {
+					throw new Exception('TokenStream: Open and Close Tokens not matching');
+				}
+				
+				if ($this->tokens[$i]->is($type)) { // opening
+					++$depth;
+				}
+				else { // closing
+					--$depth;
+				}
+			}
+			while($depth > 0);
+			
+			return $i;
+		}
 		
 		// returns a Prephp_Token_Stream containing elements $from to $to
 		// and *removes* it from the original stream

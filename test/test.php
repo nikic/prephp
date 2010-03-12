@@ -1,5 +1,33 @@
 html
 <?php
+	echo "<pre>";
+	
+	$nums = array();
+	for ($i = 0; $i<1000; ++$i) {
+		$nums[] = $i;
+	}
+	
+	$add = 1000;
+	
+	array_walk(
+		$nums,
+		function(&$val) use(&$add) { // reference possible everywhere...
+			$val += $add;
+			--$add;
+		}
+	);
+	
+	array_walk(
+		$nums,
+		function($val) {
+			echo "\n" . $val;
+		}
+	);
+	
+	$i = 0;
+	
+	echo $i+=3;
+	
 	function lambda($callback) {
 		return call_user_func($callback);
 	}
@@ -22,6 +50,5 @@ html
 	echo "\n" . 'This is an included (require) file:' . "\n";
 	
 	require 'test_included.php';
-	
 ?>
 html

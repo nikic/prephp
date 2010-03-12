@@ -19,6 +19,7 @@
 		the output of only one Token. A TokenCompileListener has to return a string or an empty string (no match).
 	*/
 	
+	require_once 'Exception.php';
 	require_once 'TokenStream.php';
 	require_once 'Cache.php';
 	

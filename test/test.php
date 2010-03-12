@@ -8,7 +8,6 @@ html
 	}
 	
 	$add = 1000;
-	
 	array_walk(
 		$nums,
 		function(&$val) use(&$add) { // reference possible everywhere...

@@ -16,7 +16,7 @@
 		$relativeToHtaccess = str_replace($GLOBALS['prephp_base_dir'], '', $inSourceDir);
 		
 		// check if it is a php file and precomile it, if it is one
-		if(preg_match('#\.php[345]?$#', $fileName)) {
+		if (preg_match('#\.php[345]?$#', $fileName)) {
 			return Prephp_Core::get()->buildFile($relativeToHtaccess);
 		}
 		

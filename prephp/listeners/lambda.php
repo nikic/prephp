@@ -78,15 +78,13 @@
 				}
 				elseif ($funcTop[$i]->is(T_VARIABLE)) {
 					if (!$isRef) {
-						$use[] =
-						array(
+						$use[] = array(
 							substr($funcTop->getContent(), 1), // remove $
 							false // no ref
 						);
 					}
 					else {
-						$use[] =
-						array(
+						$use[] = array(
 							substr($funcTop[$i]->getContent(), 1), // remove $
 							true // ref
 						);
@@ -105,7 +103,6 @@
 		
 		if (!empty($use)) {
 			// now we register the used vars as $GLOBALs
-			
 			$registerGlobals = array(
 				new Prephp_Token(
 					T_WHITESPACE,

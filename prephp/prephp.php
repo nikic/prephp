@@ -42,7 +42,7 @@
 	
 	$filename = $core->buildFile($prephp_path);
 	
-	if($filename === false) {
+	if ($filename === false) {
 		header($_SERVER['SERVER_PROTOCOL']." 404 Not Found");
 		echo '404';
 		die();

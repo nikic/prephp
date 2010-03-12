@@ -1,20 +1,20 @@
 <?php
 	// define undefined tokens (php evolves...)
-	if(!defined('T_ML_COMMENT'))
+	if (!defined('T_ML_COMMENT'))
 		define('T_ML_COMMENT', T_COMMENT);
-	if(!defined('T_OLD_FUNCTION'))
+	if (!defined('T_OLD_FUNCTION'))
 		define('T_OLD_FUNCTION', 1000001); // TODO: Find out correct number
 		
 	// need to define these newer tokens, in case an older PHP Version is used
-	if(!defined('T_DIR'))
+	if (!defined('T_DIR'))
 		define('T_DIR', 379);
-	if(!defined('T_GOTO'))
+	if (!defined('T_GOTO'))
 		define('T_GOTO', 333);
-	if(!defined('T_NAMESPACE'))
+	if (!defined('T_NAMESPACE'))
 		define('T_NAMESPACE', 377);
-	if(!defined('T_NS_C'))
+	if (!defined('T_NS_C'))
 		define('T_NS_C', 378);
-	if(!defined('T_USE'))
+	if (!defined('T_USE'))
 		define('T_USE', 340);
 	
 	const T_OPEN_ROUND		= 1001;

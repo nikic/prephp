@@ -25,7 +25,9 @@
 	
 	function prephp_DIR($tokenStream, $i) {		
 		$line = $tokenStream[$i]->getLine();
+		
 		$tokenStream->extractStream($i, $i); // remove __DIR__
+		
 		$tokenStream->insertStream($i,
 			array(
 				new Prephp_Token(

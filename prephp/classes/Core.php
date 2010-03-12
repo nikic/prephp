@@ -1,24 +1,4 @@
 <?php
-	/*
-		How it works:
-		Everything Core does as is, is to get passed the source of a file
-		and give you the source back.
-		
-		But it is possible to manipulate the resulting TokenStream
-		and the backcompilation of the TokenStream to PHP.
-		
-		Thisfor you have to register a Token-Listener.
-		There are two types of listeners:
-		The TokenListener and the TokenCompileListener
-		The first gets called when walking trough the tree, so one can manipulate the TokenStream itself,
-		the second gets called when the TokenStream is compiled back to PHP.
-		
-		TokenListeners get the TokenStream and the index of the Token as parameters
-		
-		TokenCompileListeners only get the Token Content, because they are intended to manipulate
-		the output of only one Token. A TokenCompileListener has to return a string or an empty string (no match).
-	*/
-	
 	require_once 'Exception.php';
 	require_once 'TokenStream.php';
 	require_once 'Cache.php';

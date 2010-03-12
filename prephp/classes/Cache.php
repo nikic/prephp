@@ -72,8 +72,9 @@
 			// check if cached version is up to date
 			$sourceTime = @filemtime($this->getSourceFilename($filename));
 			$cacheTime = @filemtime($this->getCacheFilename($filename));
-			if ($sourceTime >= $cacheTime)
+			if ($sourceTime >= $cacheTime) {
 				return true;
+			}
 		}
 		
 		/**

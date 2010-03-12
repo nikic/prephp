@@ -142,7 +142,7 @@
 						T_OPEN_CURLY,
 					))
 				) {
-				throw new InvalidArgumentException("TokenStream: Token at $i is not a opening bracket");
+				throw new Prephp_Exception("TokenStream: Token at $i is not a opening bracket");
 			}
 			
 			$compl = array(
@@ -158,7 +158,7 @@
 				$i = $this->findNextToken($i, array($type, $compl[$type]));
 				
 				if ($i === false) {
-					throw new Exception('TokenStream: Open and Close Tokens not matching');
+					throw new Prephp_Exception('TokenStream: Open and Close Tokens not matching');
 				}
 				
 				if ($this->tokens[$i]->is($type)) { // opening
@@ -274,7 +274,7 @@
 		public function offsetSet($offset, $value)
 		{
 			if(!($value instanceof Prephp_Token)) {
-				throw new InvalidArgumentException('Expecting Prephp_Token');
+				throw new Prephp_Exception('Expecting Prephp_Token');
 			}
 			
 			$this->tokens[$offset] = $value;

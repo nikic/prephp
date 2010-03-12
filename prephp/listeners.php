@@ -12,6 +12,7 @@
 	
 	$core->registerTokenListener(Prephp_Token::T_REQUIRE, 'prephp_include');
 	
+	
 	include_once "listeners/lambda.php";
 	$core->registerTokenListener(Prephp_Token::T_FUNCTION, 'prephp_lambda');
 ?>

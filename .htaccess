@@ -1,9 +1,6 @@
 RewriteEngine on
 Options +FollowSymLinks
 
-# access file directly, without running prephp
-#RewriteRule ^(.*\.php[345]?)@prephp!direct$ $1 [QSA,L]
-
 # prephp gets the variables
 # prefixed with prephp_
 # path: relative to this .htaccess

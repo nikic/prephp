@@ -117,6 +117,7 @@
 				array(
 					T_SEMICOLON,
 					T_CLOSE_CURLY,
+					T_OPEN_CURLY,
 					T_OPEN_TAG,
 				)
 			);
@@ -194,10 +195,7 @@
 			$after = $this->extractStream($i, $this->count() - 1);
 			
 			$this->appendStream($tokenStream);
-			
-			if (isset($after)) {
-				$this->appendStream($after);
-			}
+			$this->appendStream($after);
 		}
 		
 		// appends stream

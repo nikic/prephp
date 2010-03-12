@@ -3,7 +3,7 @@
 		/*
 		Basic idea of our implementation of lamda functions and closures:
 		
-		First of all, we avoided to use create_function. Even though create_function
+		First of all, we avoided to use create_function(). Even though create_function()
 		actually is maybe the most exact implementation of lambda functions and closures
 		in php it is said to have quite some memory leaks and other problems. Therefore
 		we decided to define the functions as real php functions and replace the function

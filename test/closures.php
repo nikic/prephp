@@ -1,5 +1,5 @@
 <pre>
-Subj: Lambda functions and Closured
+Subj: Lambda functions and Closures
 Example: function() {}, function() use() {}
 <hr />
 Expected output:

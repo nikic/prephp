@@ -52,20 +52,32 @@
 			return $this->cache->get($filename);
 		}
 		
-		public function registerTokenListener($tokId, $callback) {
+		public function registerTokenListener($tokens, $callback) {
 			if (!is_callable($callback)) {
 				throw new InvalidArgumentException('Callback not callable!');
 			}
 			
-			$this->tokenListeners[$tokId][] = $callback;
+			if (!is_array($tokens)) {
+				$tokens = array($tokens);
+			}
+			
+			foreach ($tokens as $token) {
+				$this->tokenListeners[$token][] = $callback;
+			}
 		}
 		
-		public function registerTokenCompileListener($tokId, $callback) {
+		public function registerTokenCompileListener($tokens, $callback) {
 			if (!is_callable($callback)) {
 				throw new InvalidArgumentException('Callback not callable!');
 			}
 			
-			$this->tokenCompileListeners[$tokId][] = $callback;
+			if (!is_array($tokens)) {
+				$tokens = array($tokens);
+			}
+			
+			foreach ($tokens as $token) {
+				$this->tokenCompileListeners[$token][] = $callback;
+			}
 		}
 		
 		public function compile($source) {

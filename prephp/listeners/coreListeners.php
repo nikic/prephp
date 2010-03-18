@@ -4,7 +4,7 @@
 	}
 	
 	function prephp_FILE($token) {
-		return 'prephp_getFileName(__FILE__)';
+		return 'prephp_rt_getFileName(__FILE__)';
 	}
 	
 	function prephp_real_FILE($token) {
@@ -63,7 +63,7 @@
 			array(
 				new Prephp_Token(
 					T_STRING,
-					'prephp_prepareInclude',
+					'prephp_rt_prepareInclude',
 					$tokenStream[$i]->getLine()
 				),
 				new Prephp_Token(

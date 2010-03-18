@@ -1,8 +1,7 @@
 <?php
 	// gives filename in source from filename in cache
 	function prephp_rt_getFileName($fileConstant) { // $fileConstant is __FILE__
-		return 	$GLOBALS['prephp_source_location']
-			.	str_replace($GLOBALS['prephp_cache_location'], '', $fileConstant);
+		return str_replace(prephp_cache_dir, prephp_source_dir, $fileConstant);
 	}
 	
 	// returns file to be included and prepares files
@@ -15,7 +14,7 @@
 			return $fileName;
 		}
 		
-		$relativeToHtaccess = str_replace($GLOBALS['prephp_base_dir'], '', $inSourceDir);
+		$relativeToHtaccess = str_replace(prephp_base_dir, '', $inSourceDir);
 		
 		// check if it is a php file and precomile it, if it is one
 		if (preg_match('#\.php[345]?$#', $fileName)) {

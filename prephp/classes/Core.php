@@ -61,9 +61,7 @@
 				$tokens = array($tokens);
 			}
 			
-			foreach ($tokens as $token) {
-				$this->tokenListeners[$token][] = $callback;
-			}
+			$this->tokenListeners[] = array($callback, $tokens);
 		}
 		
 		public function registerTokenCompileListener($tokens, $callback) {
@@ -83,11 +81,12 @@
 		public function compile($source) {
 			$tokenStream = new Prephp_Token_Stream(token_get_all($source));
 			
-			// first we walk the stream and call TokenListeners
-			foreach ($tokenStream as $i=>$token) {
-				if (isset($this->tokenListeners[$token->getTokenId()])) {
-					foreach ($this->tokenListeners[$token->getTokenId()] as $listener) {
-						call_user_func($listener, $tokenStream, $i);
+			// first we iterate through the token listener and the stream
+			foreach ($this->tokenListeners as $listener) {
+				list($callback, $tokens) = $listener;
+				foreach ($tokenStream as $i=>$token) {
+					if ($token->is($tokens)) {
+						$callback($tokenStream, $i);
 					}
 				}
 			}

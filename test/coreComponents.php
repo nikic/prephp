@@ -23,5 +23,5 @@ Output:
 	
 	echo "\n" . 'This is an included (require_once) file:' . "\n";
 	
-	require_once 'CoreComponents_include.php';
+	require_once 'coreComponents_include.php';
 ?>

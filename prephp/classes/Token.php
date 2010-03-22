@@ -7,44 +7,44 @@
 		
 	// need to define these newer tokens, in case an older PHP Version is used
 	if (!defined('T_DIR'))
-		define('T_DIR', 379);
+		define('T_DIR',		379);
 	if (!defined('T_GOTO'))
-		define('T_GOTO', 333);
+		define('T_GOTO',	333);
 	if (!defined('T_NAMESPACE'))
-		define('T_NAMESPACE', 377);
+		define('T_NAMESPACE',377);
 	if (!defined('T_NS_C'))
-		define('T_NS_C', 378);
+		define('T_NS_C',	378);
 	if (!defined('T_USE'))
-		define('T_USE', 340);
+		define('T_USE',		340);
 	
-	const T_OPEN_ROUND		= 1001;
-	const T_CLOSE_ROUND 	= 1002;
-	const T_OPEN_SQUARE 	= 1003;
-	const T_CLOSE_SQUARE	= 1004;
-	const T_OPEN_CURLY		= 1005;
-	const T_CLOSE_CURLY		= 1006;
-	const T_SEMICOLON		= 1007;
-	const T_DOT				= 1008;
-	const T_COMMA			= 1009;
-	const T_EQUAL			= 1010;
-	const T_LT				= 1011;
-	const T_GT				= 1012;
-	const T_PLUS			= 1013;
-	const T_MINUS			= 1014;
-	const T_MULT			= 1015;
-	const T_DIV				= 1016;
-	const T_QUESTION		= 1017;
-	const T_EXCLAMATION		= 1018;
-	const T_COLON			= 1019;
-	const T_DOUBLE_QUOTES	= 1020;
-	const T_AT				= 1021;
-	const T_AMP				= 1022;
-	const T_PERCENT			= 1023;
-	const T_PIPE			= 1024;
-	const T_DOLLAR			= 1025;
-	const T_CARET			= 1026;
-	const T_TILDE			= 1027;
-	const T_BACKTICK		= 1028;
+	define('T_OPEN_ROUND',	1001);
+	define('T_CLOSE_ROUND',	1002);
+	define('T_OPEN_SQUARE',	1003);
+	define('T_CLOSE_SQUARE',1004);
+	define('T_OPEN_CURLY',	1005);
+	define('T_CLOSE_CURLY',	1006);
+	define('T_SEMICOLON',	1007);
+	define('T_DOT',			1008);
+	define('T_COMMA',		1009);
+	define('T_EQUAL',		1010);
+	define('T_LT',			1011);
+	define('T_GT',			1012);
+	define('T_PLUS',		1013);
+	define('T_MINUS',		1014);
+	define('T_MULT',		1015);
+	define('T_DIV',			1016);
+	define('T_QUESTION',	1017);
+	define('T_EXCLAMATION',	1018);
+	define('T_COLON',		1019);
+	define('T_DOUBLE_QUOTES',1020);
+	define('T_AT',			1021);
+	define('T_AMP',			1022);
+	define('T_PERCENT',		1023);
+	define('T_PIPE',		1024);
+	define('T_DOLLAR',		1025);
+	define('T_CARET',		1026);
+	define('T_TILDE',		1027);
+	define('T_BACKTICK',	1028);
 	
 	class Prephp_Token
 	{

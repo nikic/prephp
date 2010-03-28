@@ -21,4 +21,8 @@
 	
 	include_once "listeners/arrayAccess.php";
 	$core->registerTokenListener(array(T_STRING, T_VARIABLE), 'prephp_arrayAccess');
+	
+	include_once "listeners/const.php";
+	$core->registerTokenListener(T_CONST, 'prephp_const');
+	
 ?>

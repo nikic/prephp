@@ -68,7 +68,7 @@
 					foreach ($this->tokenCompilers[$token->getTokenId()] as $compiler) {
 						$ret = $compiler($token);
 						if ($ret !== false) {
-							$tokenStream[$i] = new Prephp_Token(
+							$token = new Prephp_Token(
 								$token->getTokenId(),
 								$ret,
 								$token->getLine()

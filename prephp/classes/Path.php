@@ -1,8 +1,10 @@
 <?php
 	// This class' job is to simulate PHP's inclusion behaviour
 	// I tried to base it on PHP's implementation, but I think there still are differences
+	// for example this class will make some problems with symlinks
+	// note for future: resolve symlinks
 	
-	class Path
+	class Prephp_Path
 	{
 		private static $slash;
 		private static $antiSlash;
@@ -170,5 +172,5 @@
 		}
 	}
 	
-	Path::init();
+	Prephp_Path::init();
 ?>

@@ -1,8 +1,10 @@
 RewriteEngine on
 Options +FollowSymLinks
 
+# any exclude should be made here
+RewriteCond %{REQUEST_URI} !prephp/prephp/
+
 # prephp gets the variables
 # prefixed with prephp_
 # path: relative to this .htaccess
-RewriteCond %{REQUEST_URI} !prephp/prephp\.php$
 RewriteRule ^(.*\.php[345]?)$ prephp/prephp.php?prephp_path=$1 [QSA,L]

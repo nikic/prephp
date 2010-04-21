@@ -1,16 +1,18 @@
-<?php
+<?php	
 	function prephp_LINE($token) {
 		return (string)$token->getLine();
 	}
 	
 	function prephp_FILE($token) {
-		return 'prephp_rt_getFileName(__FILE__)';
+		return '\'' . Prephp_Core::getInstance()->getCurrent() . '\'';
 	}
 	
 	function prephp_real_FILE($token) {
 		if ($token->getContent() == 'PREPHP__FILE__') {
+			echo 'compiling real';
 			return '__FILE__';
 		}
+		return false;
 	}
 	
 	function prephp_DIR_simulator($tokenStream, $i) {
@@ -72,8 +74,8 @@
 					$tokenStream[$i]->getLine()
 				),
 				new Prephp_Token(
-					T_STRING,
-					'PREPHP__FILE__',
+					T_FILE,
+					'__FILE__',
 					$tokenStream[$i]->getLine()
 				),
 				new Prephp_Token(

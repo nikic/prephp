@@ -1,32 +1,30 @@
-<?php
-	// gives filename in source from filename in cache
-	function prephp_rt_getFileName($fileConstant) { // $fileConstant is __FILE__
-		return str_replace(prephp_cache_dir, prephp_source_dir, $fileConstant);
-	}
-	
+<?php	
 	// returns file to be included and prepares files
-	function prephp_rt_prepareInclude($fileConstant, $fileName) {
-		// now the absolute path would be, if the file were in source dir
-		$inSourceDir = prephp_rt_getFileName(dirname($fileConstant) . DIRECTORY_SEPARATOR . $fileName);		
+	function prephp_rt_prepareInclude($caller, $fileName) {
+		require_once './classes/Path.php';
 		
-		if (!file_exists($inSourceDir)) {
-			// Will throw an error in most cases, but maybe the file is found in include_path
-			return $fileName;
+		$core = Prephp_Core::getInstance();
+		
+		//$caller = $core->toSourcePath($caller);
+		
+		$paths = Prephp_Path::possiblePaths($fileName, $caller, $core->getExecuter());
+		
+		foreach ($paths as $path) {
+			if ($inCache = $core->process($path)) {
+				return $inCache;
+			}
+			
+			if (file_exists($path)) {
+				return $path;
+			}
 		}
 		
-		$relativeToHtaccess = str_replace(prephp_base_dir, '', $inSourceDir);
-		
-		// check if it is a php file and precomile it, if it is one
-		if (preg_match('#\.php[345]?$#', $fileName)) {
-			return Prephp_Core::get()->buildFile($relativeToHtaccess);
-		}
-		
-		// include html / txt / ... file
-		return $relativeToHtaccess;
+		// let php throw some nice error message
+		return $fileName;
 	}
 	
 	// func()[n] to prephp_functionArrayAccess(func(), n)
-	function prephp_rt_arrayAccess($return, $access) {
-		return $return[$access];
+	function prephp_rt_arrayAccess($array, $access) {
+		return $array[$access];
 	}
 ?>

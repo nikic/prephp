@@ -1,10 +1,6 @@
 <?php
-	/*
-		IMPORTANT NOTE:
-		This class still doesn't perfectly simulate PHP's behaviour
-		and does not perform as well as I would hope.
-		Should be optimized and rewritten, maybe.
-	*/
+	// This class' job is to simulate PHP's inclusion behaviour
+	// I tried to base it on PHP's implementation, but I think there still are differences
 	
 	class Path
 	{
@@ -12,13 +8,15 @@
 		private static $antiSlash;
 		private static $win;
 		
-		// initializes slashes and os
+		// initializes slashes and OS
 		public static function init() {
 			self::$slash = DIRECTORY_SEPARATOR;
 			self::$antiSlash = self::$slash=='/'?'\\':'/';
 			self::$win = PHP_OS == 'WINNT' || PHP_OS == 'WIN32';
 		}
 		
+		// expects: no restrictions
+		// returns all possible paths, where PHP will look whilst including
 		public static function possiblePaths($filename, $caller, $executer, $include_path = null) {
 			$executer = dirname($executer);
 			$caller = dirname($caller);
@@ -28,21 +26,21 @@
 			
 			// stream wrapper
 			if (self::isStreamWrapper($filename)) {
-				return array($filename); // one possibility
+				return array($filename);
 			}
 			
-			$paths = array();
-			
-			if (self::isExplicitlyRelative($filename) || self::isAbsolute($filename)) {
+			if (self::isRelative($filename) || self::isAbsolute($filename)) {
 				return array(self::normalize($filename, $executer));
 			}
+						
+			$paths = array();
 			
 			if ($include_path != '') {
 				$include_paths = explode(PATH_SEPARATOR, $include_path);
 				
 				foreach ($include_paths as $path) {
 					try {
-						if (self::isExplicitlyRelative($path)) {
+						if (self::isRelative($path)) {
 							$path = $executer . self::$slash . $path;
 						}
 						
@@ -70,19 +68,10 @@
 			
 			if (!self::isAbsolute($filename)) {
 				if (!self::isAbsolute($cwd) && !self::isStreamWrapper($cwd)) {
-					throw new InvalidArgumentException('cwd is not absolute or a stream wrapper or not specified!');
+					throw new InvalidArgumentException('cwd is not absolute, not a stream wrapper or not specified!');
 				}
 				
-				if ($filename_drive = self::getDriveLetter($filename)) {
-					if ($filename_drive != self::getDriveLetter($cwd)) {
-						throw new InvalidArgumentException('cwd\'s drive does not equal filename\'s drive');
-					}
-					
-					$filename = $cwd . self::$slash . substr($filename, 2);
-				}
-				else { // no drive letter: append to cwd
-					$filename = $cwd . self::$slash . $filename;
-				}
+				$filename = $cwd . self::$slash . $filename;
 			}
 			
 			// now resolve ./ and ../
@@ -117,42 +106,27 @@
 			return str_replace(self::$antiSlash, self::$slash, $filename);
 		}
 		
+		// removes double slashes (///)
 		// expects: slash-normalized non-wrapper filename
 		public static function stripDoubleSlashes($filename) {
-			return (self::isUNC($filename)?'\\':'') // Do not strip \\at beginning
+			return (self::isUNC($filename)?'\\':'') // do not strip \\ at beginning (UNC path)
 					. preg_replace('#'.preg_quote(self::$slash).'{2,}#', self::$slash, $filename);
-		}
-		
-		
-		// check if drive letter exists
-		// return false if not, drive letter (capitalized) otherwise
-		// expects: slash-normalized filename
-		public static function getDriveLetter($filename) {
-			if (
-				self::$win && // windows
-				strlen($filename) > 1 && // minimum 2
-				ctype_alpha($filename[0]) && $filename[1] == ':' // drive letter
-			) {
-				return strtoupper($filename[0]); // return drive letter
-			}
-			
-			return false; // no drive letter
 		}
 		
 		// chechs if is relative path
 		// ./ and ../
-		// not X:/ or \\ on windows
+		// (X:./ would be relative too, actually, but this is PHP's implementation)
 		// expects: slash-normalized filename
-		public static function isExplicitlyRelative($filename) {
+		public static function isRelative($filename) {
 			$l = strlen($filename);
 			
 			return
 				$l > 1 // minimum two chars, to be relative
-				&& ($filename[0] == '.' && (self::isSlash($filename[1]) || ($l > 2 && $filename[1] == '.' && self::isSlash($filename[2])))); // ./ and ../;
+				&& $filename[0] == '.' && (self::isSlash($filename[1]) || ($l > 2 && $filename[1] == '.' && self::isSlash($filename[2])));
 		}
 		
-		// checks if is absolute path (X:/ and UNC for win, / otherwise)
-		// expects: slash-normaized filename
+		// checks if is absolute path (X: and UNC for win, / otherwise)
+		// expects: slash-normalized filename
 		public static function isAbsolute($filename) {
 			$l = strlen($filename);
 			
@@ -161,7 +135,7 @@
 				return $l > 1 // minimum of two chars
 				&& (
 					(self::isSlash($filename[0]) && self::isSlash($filename[1])) // UNC path
-					|| (ctype_alpha($filename[0]) && $filename[1]==':' && $l > 2 && self::isSlash($filename[2])) // X:/ path
+					|| (ctype_alpha($filename[0]) && $filename[1]==':') // X: path (actually, this may be relative, but PHP implements it this way)
 				);
 			}
 			
@@ -189,7 +163,7 @@
 		}
 		
 		// internal!
-		// checks id $char is self::$slash
+		// checks if $char is self::$slash
 		// expects: normalized slash
 		protected static function isSlash($char) {
 			return $char == self::$slash;

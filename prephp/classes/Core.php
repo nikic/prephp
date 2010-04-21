@@ -1,118 +1,126 @@
 <?php
 	require_once 'Exception.php';
-	require_once 'TokenStream.php';
-	require_once 'Cache.php';
 	
-	class Prephp_Core
+	// todo: rethink the whole thing.
+	// Everything feels like a dirty hack...
+	
+	abstract class Prephp_Core_Abstract
 	{
-		private static $instance; // Singleton
-		public static function get() {
-			if (!isset(self::$instance)) {
-				$c = __CLASS__;
-				self::$instance = new $c;
+		protected static $instance; // Singleton instance
+		final private function __clone() {} // block cloning
+		
+		public static function getInstance() {
+			if (!class_exists('Prephp_Core')) {
+				throw new Prephp_Exception('You have to define an Prephp_Core!');
 			}
 			
-			return self::$instance;
-		}
-		final private function __construct() {}
-		final private function __clone() {}
-		
-		protected $cache;
-		
-		protected $tokenListeners;
-		protected $tokenCompileListeners;
-		
-		public function createCache($sourceDir, $cacheDir) {
-			$this->cache = new Prephp_Cache(
-				$sourceDir,
-				$cacheDir,
-				array(
-					$this,
-					'buildCallback'
-				)
-			);
+			if (!isset(Prephp_Core::$instance)) {
+				Prephp_Core::$instance = new Prephp_Core();
+			}
+			
+			return Prephp_Core::$instance;
 		}
 		
-		public function buildCallback($source, $cache) {
-			$sourceCont = file_get_contents($source);
-			if (!$sourceCont) {
-				throw new Exception('Could not read source file');
+		// default configuration
+		const sourceDir = '..';
+		const cacheDir = '../cache';
+		
+		const listenersFile = 'listeners.php';
+		
+		public function http_404() {}
+		
+		// and here our code really starts ...
+		
+		protected $preprocessor;
+		
+		protected $executer;
+		protected $current;
+		
+		protected function __construct() {
+			if (!is_readable(Prephp_Core::sourceDir)) {
+				throw new Prephp_Exception('sourceDir not readable');
 			}
 			
-			if (!file_exists(dirname($cache)) && !mkdir(dirname($cache), 0777, true)) {
-				throw new Exception('Cache Dir didnt exist and couldnt be created');
-			}
-			
-			if (!file_put_contents($cache, $this->compile($sourceCont))) {
-				throw new Exception('Could not write cache file');
+			if (!is_writeable(Prephp_Core::cacheDir) && !mkdir(Prephp_Core::cacheDir, 0777, true)) {
+				throw new Prephp_Exception('cacheDir not writeable');
 			}
 		}
 		
-		public function buildFile($filename) {
-			return $this->cache->get($filename);
-		}
-		
-		public function registerTokenListener($tokens, $callback) {
-			if (!is_callable($callback)) {
-				throw new InvalidArgumentException('Callback not callable!');
-			}
-			
-			if (!is_array($tokens)) {
-				$tokens = array($tokens);
-			}
-			
-			$this->tokenListeners[] = array($callback, $tokens);
-		}
-		
-		public function registerTokenCompileListener($tokens, $callback) {
-			if (!is_callable($callback)) {
-				throw new InvalidArgumentException('Callback not callable!');
-			}
-			
-			if (!is_array($tokens)) {
-				$tokens = array($tokens);
-			}
-			
-			foreach ($tokens as $token) {
-				$this->tokenCompileListeners[$token][] = $callback;
-			}
-		}
-		
-		public function compile($source) {
-			$tokenStream = new Prephp_Token_Stream(token_get_all($source));
-			
-			// first we iterate through the token listener and the stream
-			foreach ($this->tokenListeners as $listener) {
-				list($callback, $tokens) = $listener;
-				foreach ($tokenStream as $i=>$token) {
-					if ($token->is($tokens)) {
-						$callback($tokenStream, $i);
-					}
-				}
-			}
-			
-			// now we compile the source
-			$source = '';
-			$numof = count($tokenStream);
-			for ($i = 0; $i < $numof; ++$i) {
-				// in compiling we call TokenCompileListeners
-				if (isset($this->tokenCompileListeners[$tokenStream[$i]->getTokenId()])) {
-					foreach ($this->tokenCompileListeners[$tokenStream[$i]->getTokenId()] as $listener) {
-						$ret = call_user_func($listener, $tokenStream[$i]);
-						if ($ret != '') {
-							$tokenStream[$i] = new Prephp_Token(
-								$tokenStream[$i]->getTokenId(),
-								$ret,
-								$tokenStream[$i]->getLine()
-							);
-						}
-					}
-				}
+		// get preprocessor
+		public function getPreprocessor() {
+			if ($this->preprocessor === null) {
+				require_once 'Preprocessor.php'; // load preprocessor only when necessary
 				
-				$source .= $tokenStream[$i]->getContent();
+				$this->preprocessor = new Prephp_Preprocessor();
+				
+				require_once Prephp_Core::listenersFile;
 			}
 			
-			return $source;
+			return $this->preprocessor;
+		}
+		
+		// process file, return filepath (in cache)
+		public function process($accessPath) {			
+			if (!$sourcePath = $this->getAsSource($accessPath, true)) {
+				return false;
+			}
+			
+			// first processed file becomes executer
+			if (empty($this->executer)) {
+				$this->executer = $sourcePath;
+			}
+			
+			$cachePath = $this->getAsCache($accessPath);
+			
+			if ($this->needsRebuild($sourcePath, $cachePath)) {
+				$this->compile($sourcePath, $cachePath);
+			}
+			
+			return $cachePath;
+		}
+		
+		// check file modification time
+		public function needsRebuild($sourcePath, $cachePath) {
+			return !file_exists($cachePath) || filemtime($sourcePath) >= filemtime($cachePath);
+		}
+		
+		// compilation
+		public function compile($sourcePath, $cachePath) {
+			$this->current = $sourcePath;
+			
+			if (($source = @file_get_contents($sourcePath)) === false) {
+				throw new Prephp_Exception('Could not file_get_contents '.$sourcePath);
+			}
+			
+			$p = $this->getPreprocessor();
+			
+			$source = $p->preprocess($source);
+			
+			if (!file_exists(dirname($cachePath)) && !mkdir(dirname($cachePath), 0777, true)) {
+				throw new Prephp_Exception('Cache directory '.dirname($cachePath).' didn\'t exist and couldn\'t be created');
+			}
+			
+			if (@file_put_contents($cachePath, $source) === false) {
+				throw new Prephp_Exception('Couldn\'t file_put_contents to '.$cachePath);
+			}
+		}
+		
+		public function getAsSource($accessPath, $checkExists = false) {
+			if (!$checkExists) {
+				return realpath(Prephp_Core::sourceDir) . DIRECTORY_SEPARATOR . $accessPath;
+			}
+			
+			return realpath(Prephp_Core::sourceDir . DIRECTORY_SEPARATOR . $accessPath);
+		}
+		public function getAsCache($accessPath) {
+			return realpath(Prephp_Core::cacheDir) . DIRECTORY_SEPARATOR . $accessPath;
+		}
+		
+		public function getExecuter() {
+			return $this->executer;
+		}
+		public function getCurrent() {
+			return $this->current;
 		}
 	}
 ?>

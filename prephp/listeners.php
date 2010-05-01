@@ -1,26 +1,31 @@
 <?php
 	$p = $this->preprocessor;
 	
+	require_once 'listeners/coreListeners.php';
+	require_once 'listeners/arrayAccess.php';
+	require_once 'listeners/funcRetCall.php';
+	
+	
 	// PHP 5.3 simulators
 	if (version_compare(PHP_VERSION, '5.3', '<')) {
+		require_once 'listeners/lambda.php';
+		require_once 'listeners/const.php';
+		require_once 'listeners/nowdoc.php';
+		
 		$p->registerStreamManipulator(T_STRING, 'prephp_DIR_simulator');
 		
-		include_once "listeners/lambda.php";
 		$p->registerStreamManipulator(T_FUNCTION, 'prephp_lambda');
-		
-		include_once "listeners/const.php";
 		$p->registerStreamManipulator(T_CONST, 'prephp_const');
+		
+		$p->registerSourcePreparator('prephp_nowdoc');
 	}
 	
 	// PHP Extenders
-	include_once "listeners/arrayAccess.php";
-	$p->registerStreamManipulator(array(T_STRING, T_VARIABLE), 'prephp_arrayAccess');
 	
-	include_once "listeners/funcRetCall.php";
+	$p->registerStreamManipulator(array(T_STRING, T_VARIABLE), 'prephp_arrayAccess');
 	$p->registerStreamManipulator(array(T_STRING, T_VARIABLE), 'prephp_funcRetCall');
 	
 	// Core Listeners
-	include_once "listeners/coreListeners.php";
 	$p->registerTokenCompiler(T_LINE, 'prephp_LINE');
 	
 	$p->registerStreamManipulator(array(T_REQUIRE, T_INCLUDE, T_REQUIRE_ONCE, T_INCLUDE_ONCE), 'prephp_include');

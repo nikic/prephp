@@ -1,4 +1,5 @@
 <?php
+	require_once 'Exception.php';
 	require_once 'Token.php';
 	
 	class Prephp_Token_Stream implements ArrayAccess, Countable, SeekableIterator
@@ -36,8 +37,6 @@
 			'`' => T_BACKTICK,
 		);
 		
-		protected $pos = 0;
-		
 		// expects token array in token_get_all notation
 		// or nothing => empty TokenStream
 		public function __construct($tokenArray = null) {
@@ -62,103 +61,111 @@
 						$line
 					);
 					
-					// cant use $token[2], cause it needs php version 5.?
+					// use this, because php's own $token[2] doesn't seem to work correct
 					$line += substr_count($token[1], "\n");
 				}
 			}
 		}
 		
-		// returns the next non whitespace index
-		public function skipWhiteSpace($i) {
-			$numof = $this->count();
-			do {
-				++$i;
+		//
+		// search methods
+		//
+		
+		// returns the next (previous if $reverse) non whitespace index
+		public function skipWhitespace($i, $reverse = false) {
+			if ($reverse) { // find previous
+				while ($i--) {
+					if (!$this->tokens[$i]->is(T_WHITESPACE)) {
+						return $i;
+					}
+				}
 			}
-			while ($i < $numof && $this->tokens[$i]->is(T_WHITESPACE));
-			
-			if ($i == $numof)
-				return false;
-			
-			return $i;
-		}
-		
-		// Finds the previous token of type
-		// T_ or array(T_,T_,...)
-		public function findPreviousToken($i, $tokens) {
-			do {
-				$i--;
+			else { // find next
+				$numof = $this->count();
+				for (++$i; $i < $numof; ++$i) {
+					if (!$this->tokens[$i]->is(T_WHITESPACE)) {
+						return $i;
+					}
+				}
 			}
-			while ($i > 0 && !$this->tokens[$i]->is($tokens));
 			
-			if ($i == 0 && !$this->token[$i]->is($tokens))
-				return false;
-			
-			return $i;
+			return false;
 		}
 		
-		// Finds the next token of type
-		// T_ or array(T_,T_,...)
-		public function findNextToken($i, $tokens) {
-			$numof = $this->count();
-			do {
-				$i++;
+		// finds next (previous if $reverse) index which is any of $tokens
+		public function findToken($i, $tokens, $reverse = false) {
+			if ($reverse) { // find previous
+				while ($i--) {
+					if ($this->tokens[$i]->is($tokens)) {
+						return $i;
+					}
+				}
 			}
-			while ($i < $numof && !$this->tokens[$i]->is($tokens));
+			else { // find next
+				$numof = $this->count();
+				for (++$i; $i < $numof; ++$i) {
+					if ($this->tokens[$i]->is($tokens)) {
+						return $i;
+					}
+				}
+			}
 			
-			if($i == $numof)
-				return false;
-			
-			return $i;
+			return false;
 		}
 		
-		// Finds previous end of statement
-		public function findPreviousEOS($i) {
-			return $this->findPreviousToken($i,
-				array(
-					T_SEMICOLON,
-					T_CLOSE_CURLY,
-					T_OPEN_CURLY,
-					T_OPEN_TAG,
-				)
-			);
-		}
-		
-		// Finds next end of statement
-		public function findNextEOS($i) {
-			return $this->findNextToken($i,
-				array(
-					T_SEMICOLON,
-					T_CLOSE_TAG,
-				)
-			);
-		}
-		
-		// Finds the complementary bracket
-		public function findComplementaryBracket($i) {
-			if	(!$this->tokens[$i]->is(
+		// finds next (previous if $reverse) end of statement
+		public function findEOS($i, $reverse = false) {
+			if ($reverse) { // find previous
+				return $this->findToken(
+					$i,
 					array(
+						T_SEMICOLON,
+						T_CLOSE_CURLY,
+						T_OPEN_CURLY,
+						T_OPEN_TAG,
+					),
+					false
+				);
+			}
+			else { // find next
+				return $this->findToken(
+					$i,
+					array(
+						T_SEMICOLON,
+						T_CLOSE_TAG, // is this one correct?
+					)
+				);
+			}
+		}
+		
+		// finds the complementary bracket (NO $reverse!)
+		// is infallible (never returns false [throws Exception instead])
+		public function findComplementaryBracket($i) {
+			if (
+				!$this->tokens[$i]->is(array(
 						T_OPEN_ROUND,
 						T_OPEN_SQUARE,
 						T_OPEN_CURLY,
-					))
-				) {
-				throw new Prephp_Exception("TokenStream: Token at $i is not a opening bracket");
+				))
+			) {
+				throw new Prephp_Exception('TokenStream (complementaryBracket): Token at '.$i.' is not an opening bracket!');
 			}
 			
-			$compl = array(
+			$complements = array(
 				T_OPEN_ROUND => T_CLOSE_ROUND,
 				T_OPEN_SQUARE => T_CLOSE_SQUARE,
 				T_OPEN_CURLY => T_CLOSE_CURLY,
 			);
 			
 			$type = $this->tokens[$i]->getTokenId();
+			$compl = $complements[$type];
+			$depth = 1;
 			
-			$depth = 0;
-			do {
-				$i = $this->findNextToken($i, array($type, $compl[$type]));
+			while ($depth > 0) {
+				$i = $this->findToken($i, array($type, $compl));
 				
 				if ($i === false) {
-					throw new Prephp_Exception('TokenStream: Open and Close Tokens not matching');
+					throw new Prephp_Exception('TokenStream (complementaryBracket): Open and Close Tokens not matching (reached End Of Stream).');
 				}
 				
 				if ($this->tokens[$i]->is($type)) { // opening
@@ -168,10 +175,35 @@
 					--$depth;
 				}
 			}
-			while($depth > 0);
-			
+
 			return $i;
 		}
+		
+		// define shortcut functions (e.g. for compatibility reasons)
+		
+		// finds the previous token (shortcut for findToken(,,) => findToken(,,true))
+		public function findPreviousToken($i, $tokens) {
+			return $this->findToken($i, $tokens, true);
+		}
+		
+		// finds the next token of type (shortcut for findToken(,,false))
+		public function findNextToken($i, $tokens) {
+			return $this->findToken($i, $tokens, false);
+		}
+		
+		// finds previous end of statement (shortcut for findEOS(,false))
+		public function findPreviousEOS($i) {
+			return $this->findEOS($i, true);
+		}
+		
+		// finds next end of statement (shortcut for findEOS(,) => findEOS(,true))
+		public function findNextEOS($i) {
+			return $this->findEOD($i);
+		}
+		
+		//
+		// TokenStream operations
+		//
 		
 		// returns a Prephp_Token_Stream containing elements $from to $to
 		// and *removes* it from the original stream
@@ -186,7 +218,7 @@
 		
 		// inserts stream at $i, moving all following tokens down
 		public function insertStream($i, $tokenStream) {
-			if ($i == $this->count() - 1) {
+			if ($i == $this->count() - 1) { // end => append
 				$this->appendStream($tokenStream);
 				return;
 			}
@@ -209,7 +241,7 @@
 		
 		// inserts token at $i moving all other tokens down
 		public function insertToken($i, Prephp_Token $token) {
-			$this->insertStream($i, // maybe implement this more nice?
+			$this->insertStream($i, // maybe implement this more efficient?
 				array(
 					$token
 				)
@@ -221,14 +253,20 @@
 			$this->tokens[] = $token;
 		}
 		
-		
-		
+		//
 		// interface Countable
+		//
+		
 		public function count() {
 			return count($this->tokens);
 		}
 		
+		//
 		// interface SeekableIterator
+		//
+		
+		protected $pos = 0;
+		
 		public function rewind() {
 			$this->pos = 0;
 		}
@@ -260,7 +298,10 @@
 			}
 		}
 		
+		//
 		// interface ArrayAccess
+		//
+		
 		public function offsetExists($offset)
 		{
 			return isset($this->tokens[$offset]);

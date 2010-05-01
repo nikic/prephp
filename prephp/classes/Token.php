@@ -17,6 +17,7 @@
 	if (!defined('T_USE'))
 		define('T_USE',		340);
 	
+	// define custom one char tokens
 	define('T_OPEN_ROUND',	1001);
 	define('T_CLOSE_ROUND',	1002);
 	define('T_OPEN_SQUARE',	1003);
@@ -50,11 +51,12 @@
 	{
 		protected $tokId; // Token Identifier. Something like T_VARIABLE
 		protected $content; // Token Content. Something like "$var"
-		protected $line; // Line of Token, to throw Exceptions. Something like 7
+		protected $line; // Line of Token (e.g. for Exceptions). Something like 7
 		
 		// I define all the tokens here again, cause some could think
 		// it was cleaner to write Prephp_Token::T_DOT instead of T_DOT
-		// This is DEPRECATED and may be removed
+		
+		// This is *DEPRECATED* and will be removed
 		const T_OPEN_ROUND		= T_OPEN_ROUND;
 		const T_CLOSE_ROUND 	= T_CLOSE_ROUND;
 		const T_OPEN_SQUARE 	= T_OPEN_SQUARE;

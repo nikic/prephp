@@ -5,8 +5,6 @@
 		
 		$core = Prephp_Core::getInstance();
 		
-		//$caller = $core->toSourcePath($caller);
-		
 		$paths = Prephp_Path::possiblePaths($fileName, $caller, $core->getExecuter());
 		
 		foreach ($paths as $path) {

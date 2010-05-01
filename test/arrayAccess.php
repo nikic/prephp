@@ -1,22 +1,50 @@
 <pre>
-Subj: Array access after function call test.
-Example: func()[$num]
+Subj: Array access after function call
+Example: func()[$key]
 <hr />
 Expected output:
-world
-world
+passed
+passed
+passed
+passed
 <hr />
 Output:
 <?php
-	$hi = 'world';
+	require './testUtils.php';
 	
-	echo get_defined_vars()['hi'];
+	$passed = array('hi', 7);
 	
-	echo "\n";
+	function get() {
+		global $passed;
+		return $passed;
+	}
 	
-	$function = 'get_defined_vars';
-	$var = 'hi';
+	$get = 'get';
 	
-	echo $function()[$var];
+	class Test
+	{
+		public function get() {
+			global $passed;
+			return $passed;
+		}
+		
+		public static function get_static() {
+			global $passed;
+			return $passed;
+		}
+	}
+	
+	// T1: Test T_STRING call
+	testStrict(get()[0], 'hi');
+	
+	// T2: Test T_VARIABLE call
+	testStrict($get()[1], 7);
+	
+	// T3: Test class non-static call
+	$test = new Test;
+	testStrict($test->get()[(((1)))], 7); 
+	
+	// T4: Test class static call
+	testStrict(Test::get_static()[0], 'hi');
 ?>
 </pre>

@@ -1,8 +1,19 @@
 <?php
 	function prephp_arrayAccess($tokenStream, $i) {
 		$startFuncCall = $i;
-		$i = $tokenStream->skipWhitespace($i);
 		
+		$i = $tokenStream->skipWhitespace($i);
+		if ($tokenStream[$i]->is(array(T_PAAMAYIM_NEKUDOTAYIM, T_OBJECT_OPERATOR))) {
+			$i = $tokenStream->skipWhitespace($i);
+			
+			// the following cannot occur if syntax's correct, actually
+			if (!$tokenStream[$i]->is(array(T_STRING, T_VARIABLE))) {
+				return;
+			}
+			
+			$i = $tokenStream->skipWhitespace($i);
+		}
+
 		// not a function call
 		if (!$tokenStream[$i]->is(T_OPEN_ROUND)) {
 			return;
@@ -11,17 +22,13 @@
 		$endFuncCall = $i = $tokenStream->findComplementaryBracket($i);
 		
 		$i = $tokenStream->skipWhitespace($i);
-		
+
 		// not an array access ("[")
 		if (!$tokenStream[$i]->is(T_OPEN_SQUARE)) {
 			return;
 		}
 		
-		$startArrayAccess = $i;
-		
-		$endArrayAccess = $tokenStream->findComplementaryBracket($i);
-		
-		$arrayAccess = $tokenStream->extractStream($startArrayAccess, $endArrayAccess);
+		$arrayAccess = $tokenStream->extractStream($i, $tokenStream->findComplementaryBracket($i));
 		$arrayAccess->extractStream(0, 0); // remove "["
 		$arrayAccess->extractStream(count($arrayAccess)-1, count($arrayAccess)-1); // remove "]"
 		

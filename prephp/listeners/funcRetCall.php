@@ -3,18 +3,23 @@
 		$firstFuncStart = $i;
 		
 		$i = $tokenStream->skipWhitespace($i);
-		
+		if ($tokenStream[$i]->is(array(T_PAAMAYIM_NEKUDOTAYIM, T_OBJECT_OPERATOR))) {
+			$i = $tokenStream->skipWhitespace($i);
+			
+			// the following cannot occur if syntax's correct, actually
+			if (!$tokenStream[$i]->is(array(T_STRING, T_VARIABLE))) {
+				return;
+			}
+			
+			$i = $tokenStream->skipWhitespace($i);
+		}
+
+		// not a function call
 		if (!$tokenStream[$i]->is(T_OPEN_ROUND)) {
-			return; //not a function call
+			return;
 		}
 		
-		$i = $tokenStream->findComplementaryBracket($i);
-		
-		if ($i === false) {
-			throw new Prephp_Exception("funcRetCall: Could not find expected ')'");
-		}
-		
-		$firstFuncEnd = $i;
+		$firstFuncEnd = $i = $tokenStream->findComplementaryBracket($i);
 		
 		$i = $tokenStream->skipWhitespace($i);
 		
@@ -22,17 +27,7 @@
 			return; // not a function return value call
 		}
 		
-		$secondFuncStart = $i;
-		
-		$i = $tokenStream->findComplementaryBracket($i);
-		
-		if ($i === false) {
-			throw new Prephp_Exception("funcRetCall: Could not find expected ')'");
-		}
-		
-		$secondFuncEnd = $i;
-		
-		$secondFunc = $tokenStream->extractStream($secondFuncStart, $secondFuncEnd);
+		$secondFunc = $tokenStream->extractStream($i, $tokenStream->findComplementaryBracket($i));
 		$firstFunc = $tokenStream->extractStream($firstFuncStart, $firstFuncEnd);
 		
 		// insert now

@@ -38,5 +38,13 @@ E1_
 '
 EON
 , '\'');
+
+	testStrict(
+<<<DEL1
+<<<'DEL2'
+DEL2
+DEL1
+, '<<<' . "'DEL2'" . '
+DEL2');
 ?>
-</pre> 
+</pre>

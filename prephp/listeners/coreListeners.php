@@ -9,7 +9,6 @@
 	
 	function prephp_real_FILE($token) {
 		if ($token->getContent() == 'PREPHP__FILE__') {
-			echo 'compiling real';
 			return '__FILE__';
 		}
 		return false;

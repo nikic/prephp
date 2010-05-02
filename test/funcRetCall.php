@@ -21,7 +21,8 @@ Output:
 		}
 		
 		return function() use ($func) {
-			return call_user_func_array($func, func_get_args());
+			$args = func_get_args();
+			return call_user_func_array($func, $args);
 		};
 	}
 	$checkFunc = 'checkFunc';

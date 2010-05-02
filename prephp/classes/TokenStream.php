@@ -124,7 +124,7 @@
 						T_OPEN_CURLY,
 						T_OPEN_TAG,
 					),
-					false
+					true
 				);
 			}
 			else { // find next
@@ -198,7 +198,7 @@
 		
 		// finds next end of statement (shortcut for findEOS(,) => findEOS(,true))
 		public function findNextEOS($i) {
-			return $this->findEOD($i);
+			return $this->findEOS($i);
 		}
 		
 		//

@@ -29,7 +29,7 @@
 		}
 		
 		// start of the function definition (including '{')
-		$funcDefStart = $tokenStream->findNextToken($i, T_OPEN_CURLY);
+		$funcDefStart = $tokenStream->findToken($i, T_OPEN_CURLY);
 		if ($funcDefStart === false) {
 			throw new Prephp_Exception("Lambda-Listener: No function definition (couldn't find '{')");
 		}
@@ -64,13 +64,13 @@
 		$use = array();
 
 		// to extract the function args, later
-		$funcArgsStart = $funcTop->findNextToken(0, T_OPEN_ROUND);
+		$funcArgsStart = $funcTop->findToken(0, T_OPEN_ROUND);
 		$funcArgsEnd = $funcTop->findComplementaryBracket($funcArgsStart);
 		
-		$i = $funcTop->findNextToken($funcArgsEnd, array(T_STRING, T_USE));
+		$i = $funcTop->findToken($funcArgsEnd, array(T_STRING, T_USE));
 		$numof = count($funcTop);
 		// check if there is a use()
-		if ($i !== false || $funcTop[$i]->getContent() == 'use') {
+		if ($i !== false && $funcTop[$i]->getContent() == 'use') {
 			$isRef = false;
 			do {
 				if ($funcTop[$i]->is(T_AMP)) {
@@ -79,7 +79,7 @@
 				elseif ($funcTop[$i]->is(T_VARIABLE)) {
 					if (!$isRef) {
 						$use[] = array(
-							substr($funcTop->getContent(), 1), // remove $
+							substr($funcTop[$i]->getContent(), 1), // remove $
 							false // no ref
 						);
 					}

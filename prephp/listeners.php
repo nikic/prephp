@@ -10,14 +10,14 @@
 	if (version_compare(PHP_VERSION, '5.3', '<')) {
 		require_once 'listeners/lambda.php';
 		require_once 'listeners/const.php';
-		require_once 'listeners/nowdoc.php';
+		//require_once 'listeners/nowdoc.php';
 		
 		$p->registerStreamManipulator(T_STRING, 'prephp_DIR_simulator');
 		
 		$p->registerStreamManipulator(T_FUNCTION, 'prephp_lambda');
 		$p->registerStreamManipulator(T_CONST, 'prephp_const');
 		
-		$p->registerSourcePreparator('prephp_nowdoc');
+		//$p->registerSourcePreparator('prephp_nowdoc');
 	}
 	
 	// PHP Extenders

@@ -3,7 +3,6 @@ Subj: const outside classes
 Example: const foo = 'bar'
 <hr />
 Expected output:
-Output:
 one: 1
 two: 2
 three: three
@@ -11,6 +10,7 @@ four: four
 five: 5
 six: six
 seven: 7
+eight: 8
 <hr />
 Output:
 <?php
@@ -30,5 +30,17 @@ Output:
 	echo 'five: '.five . "\n";
 	echo 'six: '.six . "\n";
 	echo 'seven: '.(6+seven) . "\n";
+	
+	class Foo
+	{
+		const Bar = 'nix'; // shoudn't be replaced
+	}
+	
+	class Bar
+	{
+	}
+	
+	const eight = 8;
+	echo 'eight: '.eight . "\n";
 ?>
 </pre>

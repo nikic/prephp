@@ -7,11 +7,33 @@
 	function prephp_const($tokenStream, $i) {
 		$constKeyword = $i;
 		
+		// check that we're not *directly* inside a class
+		
+		// find previous { on same level
+		$lastOpen = $i;
+		while ($lastOpen = $tokenStream->findToken($lastOpen, T_OPEN_CURLY, true)) {
+			if ($tokenStream->findComplementaryBracket($lastOpen) < $i) {
+				continue;
+			}
+
+			// no class before {
+			if (!$lastClass = $tokenStream->findToken($lastOpen, T_CLASS, true)) {
+				break;
+			}
+			
+			// there is another { between class and our {
+			if ($tokenStream->findToken($lastClass, T_OPEN_CURLY) != $lastOpen) {
+				break;
+			}
+			
+			return; // is a class
+		}
+
 		$constants = array();
 		
 		$till = $tokenStream->findNextEOS($i);
 		if ($till === false) {
-			throw new PrephpException("Const: Could not find EOS!");
+			throw new PrephpException('Const: Could not find next EOS!');
 		}
 		
 		$name = '';

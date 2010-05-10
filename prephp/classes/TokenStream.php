@@ -38,14 +38,8 @@
 		);
 		
 		// expects token array in token_get_all notation
-		// or nothing => empty TokenStream
-		public function __construct($tokenArray = null) {
-			if ($tokenArray === null) {
-				return;
-			}
-			
+		public function __construct($tokenArray) {
 			$line = 1;
-			
 			foreach ($tokenArray as $token) {
 				if (is_string($token)) {
 					$this->tokens[] = new Prephp_Token(
@@ -61,7 +55,6 @@
 						$line
 					);
 					
-					// use this, because php's own $token[2] doesn't seem to work correct
 					$line += substr_count($token[1], "\n");
 				}
 			}
@@ -138,34 +131,53 @@
 			}
 		}
 		
-		// finds the complementary bracket (NO $reverse!)
+		// finds the complementary bracket
 		// is infallible (never returns false [throws Exception instead])
-		public function findComplementaryBracket($i) {
-			if (
-				!$this->tokens[$i]->is(array(
-						T_OPEN_ROUND,
-						T_OPEN_SQUARE,
-						T_OPEN_CURLY,
-				))
-			) {
-				throw new Prephp_Exception('TokenStream (complementaryBracket): Token at '.$i.' is not an opening bracket!');
+		public function findComplementaryBracket($i, $reverse = false) {
+			if ($reverse) {
+				if (
+					!$this->tokens[$i]->is(array(
+							T_CLOSE_ROUND,
+							T_CLOSE_SQUARE,
+							T_CLOSE_CURLY,
+					))
+				) {
+					throw new Prephp_Exception('TokenStream (complementaryBracket): Token at '.$i.' is not an opening bracket!');
+				}
+				
+				$complements = array(
+					T_CLOSE_ROUND => T_OPEN_ROUND,
+					T_CLOSE_SQUARE => T_OPEN_SQUARE,
+					T_CLOSE_CURLY => T_OPEN_CURLY,
+				);
 			}
-			
-			$complements = array(
-				T_OPEN_ROUND => T_CLOSE_ROUND,
-				T_OPEN_SQUARE => T_CLOSE_SQUARE,
-				T_OPEN_CURLY => T_CLOSE_CURLY,
-			);
-			
+			else {
+				if (
+					!$this->tokens[$i]->is(array(
+							T_OPEN_ROUND,
+							T_OPEN_SQUARE,
+							T_OPEN_CURLY,
+					))
+				) {
+					throw new Prephp_Exception('TokenStream (complementaryBracket): Token at '.$i.' is not an opening bracket!');
+				}
+				
+				$complements = array(
+					T_OPEN_ROUND => T_CLOSE_ROUND,
+					T_OPEN_SQUARE => T_CLOSE_SQUARE,
+					T_OPEN_CURLY => T_CLOSE_CURLY,
+				);
+			}
+				
 			$type = $this->tokens[$i]->getTokenId();
 			$compl = $complements[$type];
 			$depth = 1;
 			
 			while ($depth > 0) {
-				$i = $this->findToken($i, array($type, $compl));
+				$i = $this->findToken($i, array($type, $compl), $reverse);
 				
 				if ($i === false) {
-					throw new Prephp_Exception('TokenStream (complementaryBracket): Open and Close Tokens not matching (reached End Of Stream).');
+					throw new Prephp_Exception('TokenStream (complementaryBracket): Open and Close Tokens not matching.');
 				}
 				
 				if ($this->tokens[$i]->is($type)) { // opening
@@ -208,7 +220,7 @@
 		// returns a Prephp_Token_Stream containing elements $from to $to
 		// and *removes* it from the original stream
 		public function extractStream($from, $to) {
-			$tokenStream = new Prephp_Token_Stream();
+			$tokenStream = new Prephp_Token_Stream(array());
 			$tokenStream->appendStream(
 				array_splice($this->tokens, $from, $to - $from + 1, array())
 			);
@@ -233,14 +245,29 @@
 		// appends stream
 		public function appendStream($tokenStream) {			
 			foreach ($tokenStream as $token) {
-				$this->tokens[] = $token;
+				// Prephp_Token: append
+				if ($token instanceof Prephp_Token) {
+					$this->tokens[] = $token;
+				}
+				// One char Token: append Prephp_Token resulting from it
+				elseif (is_string($token)) {
+					$this->tokens[] = new Prephp_Token(
+						self::$customTokens[$token],
+						$token
+					);
+				}
+				// array or Stream: recursively call appendStream
+				elseif (is_array($token) || $token instanceof Prephp_Token_Stream) {
+					$this->appendStream($token);
+				}
+				// drop anything else
 			}
 		}
 		
 		// need extractToken?
 		
 		// inserts token at $i moving all other tokens down
-		public function insertToken($i, Prephp_Token $token) {
+		public function insertToken($i, $token) {
 			$this->insertStream($i, // maybe implement this more efficient?
 				array(
 					$token
@@ -249,8 +276,8 @@
 		}
 		
 		// appends token to stream
-		public function appendToken(Prephp_Token $token) {
-			$this->tokens[] = $token;
+		public function appendToken($token) {
+			$this->tokens->appendStream(array($token));
 		}
 		
 		//

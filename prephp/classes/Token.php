@@ -211,7 +211,7 @@
 		const T_WHITESPACE		= T_WHITESPACE;
 		const T_XOR_EQUAL		= T_XOR_EQUAL;
 		
-		public function __construct($tokId, $content, $line) {
+		public function __construct($tokId, $content, $line = -1) {
 			$this->tokId = $tokId;
 			$this->content = $content;
 			$this->line = $line;

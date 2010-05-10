@@ -4,12 +4,6 @@ Example: <<<'Hi'
 	NOWDOC content
 Hi;
 <hr />
-Expected output:
-passed
-passed
-passed
-passed
-<hr />
 Output:
 <?php
 	require_once './testUtils.php';

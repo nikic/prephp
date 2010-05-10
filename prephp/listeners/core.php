@@ -25,73 +25,48 @@
 	}
 	
 	function prephp_DIR($tokenStream, $i) {		
-		$line = $tokenStream[$i]->getLine();
-		
 		$tokenStream->extractStream($i, $i); // remove __DIR__
 		
 		$tokenStream->insertStream($i,
 			array(
 				new Prephp_Token(
 					T_STRING,
-					'dirname',
-					$line
+					'dirname'
 				),
-				new Prephp_Token(
-					T_OPEN_ROUND,
-					'(',
-					$line
-				),
-				new Prephp_Token(
-					T_FILE,
-					'__FILE__',
-					$line
-				),
-				new Prephp_Token(
-					T_CLOSE_ROUND,
-					')',
-					$line
-				),
+				'(',
+					new Prephp_Token(
+						T_FILE,
+						'__FILE__'
+					),
+				')',
 			)
 		);
 	}
 	
 	function prephp_include($tokenStream, $i) {
 		$i = $tokenStream->skipWhitespace($i);
-		if ($tokenStream[$i]->is(T_OPEN_ROUND))
-			++$i;
+		if ($tokenStream[$i]->is(T_OPEN_ROUND)) {
+			$i = $tokenStream[$i]->skipWhitespace($i);
+		}
 		
 		$tokenStream->insertStream($i,
 			array(
 				new Prephp_Token(
 					T_STRING,
-					'prephp_rt_prepareInclude',
-					$tokenStream[$i]->getLine()
+					'prephp_rt_prepareInclude'
 				),
-				new Prephp_Token(
-					T_OPEN_ROUND,
-					'(',
-					$tokenStream[$i]->getLine()
-				),
-				new Prephp_Token(
-					T_FILE,
-					'__FILE__',
-					$tokenStream[$i]->getLine()
-				),
-				new Prephp_Token(
-					T_COMMA,
+				'(',
+					new Prephp_Token(
+						T_FILE,
+						'__FILE__',
+						$tokenStream[$i]->getLine()
+					),
 					',',
-					$tokenStream[$i]->getLine()
-				),
 			)
 		);
 		
-		$i = $tokenStream->findNextToken($i, T_SEMICOLON);
-		$tokenStream->insertToken($i,
-			new Prephp_Token(
-				T_CLOSE_ROUND,
-				')',
-				$tokenStream[$i]->getLine()
-			)
+		$tokenStream->insertToken($tokenStream->findEOS($i),
+				')'
 		);
 	}
 ?>

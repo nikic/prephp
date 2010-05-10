@@ -1,8 +1,6 @@
 <?php
-	function prephp_arrayAccess($tokenStream, $i) {
-		$startFuncCall = $i;
-		
-		$i = $tokenStream->skipWhitespace($i);
+	function prephp_arrayAccess($tokenStream, $iCallStart) {
+		$i = $tokenStream->skipWhitespace($iCallStart);
 		if ($tokenStream[$i]->is(array(T_PAAMAYIM_NEKUDOTAYIM, T_OBJECT_OPERATOR))) {
 			$i = $tokenStream->skipWhitespace($i);
 			
@@ -19,60 +17,33 @@
 			return;
 		}
 		
-		$endFuncCall = $i = $tokenStream->findComplementaryBracket($i);
+		$iCallEnd = $tokenStream->findComplementaryBracket($i);
 		
-		$i = $tokenStream->skipWhitespace($i);
+		$iArrayAccess = $tokenStream->skipWhitespace($iCallEnd);
 
 		// not an array access ("[")
-		if (!$tokenStream[$i]->is(T_OPEN_SQUARE)) {
+		if (!$tokenStream[$iArrayAccess]->is(T_OPEN_SQUARE)) {
 			return;
 		}
 		
-		$arrayAccess = $tokenStream->extractStream($i, $tokenStream->findComplementaryBracket($i));
-		$arrayAccess->extractStream(0, 0); // remove "["
-		$arrayAccess->extractStream(count($arrayAccess)-1, count($arrayAccess)-1); // remove "]"
+		$sArrayAccess = $tokenStream->extractStream($iArrayAccess, $tokenStream->findComplementaryBracket($iArrayAccess));
+		$sArrayAccess->extractStream(0, 0); // remove "["
+		$sArrayAccess->extractStream(count($sArrayAccess)-1, count($sArrayAccess)-1); // remove "]"
 		
-		$funcCall = $tokenStream->extractStream($startFuncCall, $endFuncCall);
+		$sCall = $tokenStream->extractStream($iCallStart, $iCallEnd);
 		
 		// now insert prephp_rt_arrayAccess()
-		$i = $startFuncCall;
-		
-		$tokenStream->insertStream($i,
+		$tokenStream->insertStream($iCallStart,
 			array(
 				new Prephp_Token(
 					T_STRING,
-					'prephp_rt_arrayAccess',
-					$funcCall[0]->getLine()
+					'prephp_rt_arrayAccess'
 				),
-				new Prephp_Token(
-					T_OPEN_ROUND,
-					'(',
-					$funcCall[0]->getLine()
-				),
-			)
-		);
-		
-		$tokenStream->insertStream($i += 2,
-			$funcCall
-		);
-		
-		$tokenStream->insertToken($i += count($funcCall),
-			new Prephp_Token(
-				T_COMMA,
-				',',
-				$funcCall[count($funcCall)-1]->getLine()
-			)
-		);
-		
-		$tokenStream->insertStream(++$i,
-			$arrayAccess
-		);
-		
-		$tokenStream->insertToken($i += count($arrayAccess),
-			new Prephp_Token(
-				T_CLOSE_ROUND,
+				'(',
+					$sCall,
+					',',
+					$sArrayAccess,
 				')',
-				$arrayAccess[count($arrayAccess)-1]->getLine()
 			)
 		);
 	}

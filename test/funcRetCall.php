@@ -2,12 +2,6 @@
 Subj: call function return value
 Example: func($some)($args)
 <hr />
-Expected output:
-passed
-passed
-passed
-passed
-<hr />
 Output:
 <?php
 	require_once './testUtils.php';
@@ -38,9 +32,9 @@ Output:
 		}
 	}
 	
-	testStrict(checkFunc('strlen')('four'), 4);
-	testStrict($checkFunc('strlen')('four'), 4);
-	testStrict(Test::checkFunc('strlen')('four'), 4);
-	testStrict(Test::checkFunc(array('Test', 'strlen'))('four'), 4);
+	testStrict(checkFunc('strlen')('four'), 4, 'func()()');
+	testStrict($checkFunc('strlen')('four'), 4, '$func()()');
+	testStrict(Test::checkFunc('strlen')('four'), 4, 'Class::method()()');
+	testStrict(Test::checkFunc(array('Test', 'strlen'))('four'), 4, 'Class::method(array(...))()');
 ?>
 </pre>

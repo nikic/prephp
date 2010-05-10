@@ -1,8 +1,6 @@
 <?php
-	function prephp_funcRetCall($tokenStream, $i) {
-		$firstFuncStart = $i;
-		
-		$i = $tokenStream->skipWhitespace($i);
+	function prephp_funcRetCall($tokenStream, $iFirstFuncStart) {
+		$i = $tokenStream->skipWhitespace($iFirstFuncStart);
 		if ($tokenStream[$i]->is(array(T_PAAMAYIM_NEKUDOTAYIM, T_OBJECT_OPERATOR))) {
 			$i = $tokenStream->skipWhitespace($i);
 			
@@ -13,71 +11,37 @@
 			
 			$i = $tokenStream->skipWhitespace($i);
 		}
-
+		
 		// not a function call
 		if (!$tokenStream[$i]->is(T_OPEN_ROUND)) {
 			return;
 		}
 		
-		$firstFuncEnd = $i = $tokenStream->findComplementaryBracket($i);
+		$iFirstFuncEnd = $tokenStream->findComplementaryBracket($i);
+		$iSecondFuncStart = $tokenStream->skipWhitespace($iFirstFuncEnd);
 		
-		$i = $tokenStream->skipWhitespace($i);
-		
-		if (!$tokenStream[$i]->is(T_OPEN_ROUND)) {
+		if (!$tokenStream[$iSecondFuncStart]->is(T_OPEN_ROUND)) {
 			return; // not a function return value call
 		}
 		
-		$secondFunc = $tokenStream->extractStream($i, $tokenStream->findComplementaryBracket($i));
-		$firstFunc = $tokenStream->extractStream($firstFuncStart, $firstFuncEnd);
+		$sSecondFunc = $tokenStream->extractStream($iSecondFuncStart, $tokenStream->findComplementaryBracket($iSecondFuncStart));
+		$sFirstFunc = $tokenStream->extractStream($iFirstFuncStart, $iFirstFuncEnd);
 		
-		// insert now
+		$sSecondFunc->extractStream(0, 0); // remove (
+		$sSecondFunc->extractStream(count($sSecondFunc)-1, count($sSecondFunc)-1); // remove )
 		
-		$i = $firstFuncStart;
-		
-		$tokenStream->insertStream($i,
+		// now, insert call_user_func
+		$tokenStream->insertStream($iFirstFuncStart,
 			array(
 				new Prephp_Token(
 					T_STRING,
-					'call_user_func',
-					-1
+					'call_user_func'
 				),
-				new Prephp_Token(
-					T_OPEN_ROUND,
-					'(',
-					-1
-				),
-			)
-		);
-		
-		$tokenStream->insertStream($i+=2,
-			$firstFunc
-		);
-		
-		$i += count($firstFunc);
-		
-		// remove ( and )
-		$secondFunc->extractStream(0, 0); // remove (
-		$secondFunc->extractStream(count($secondFunc)-1, count($secondFunc)-1); // remove )
-		
-		if (count($secondFunc) != 0) {
-			$tokenStream->insertToken($i,
-				new Prephp_Token(
-					'T_COMMA',
-					',',
-					-1
-				)
-			);
-			
-			$tokenStream->insertStream(++$i,
-				$secondFunc
-			);
-		}
-		
-		$tokenStream->insertToken($i+=count($secondFunc),
-			new Prephp_Token(
-				'T_CLOSE_ROUND',
+				'(',
+					$sFirstFunc,
+					count($sSecondFunc)!=0?',':null,
+					$sSecondFunc,
 				')',
-				-1
 			)
 		);
 	}

@@ -1,10 +1,10 @@
 <?php
-	function testStrict($check, $compare = true) {
+	function testStrict($check, $compare = true, $title = 'unnamed test') {
 		if ($check === $compare) {
-			echo 'passed', "\n";
+			echo 'passed ', $title, "\n";
 			return;
 		}
 		
-		echo 'failed (expected "', $compare, '", got "', $check , '")', "\n";
+		echo 'failed (expected "', $compare, '", got "', $check , '") ', $title, "\n";
 	}
 ?>

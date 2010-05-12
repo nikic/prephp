@@ -8,13 +8,15 @@
 		$paths = Prephp_Path::possiblePaths($fileName, $caller, $core->getExecuter());
 		
 		foreach ($paths as $path) {
-			if ($inCache = $core->process($path)) {
+			if (!file_exists($path)) {
+				continue;
+			}
+			
+			if (preg_match('#\.php5?$#', $path) && $inCache = $core->process($path)) {
 				return $inCache;
 			}
 			
-			if (file_exists($path)) {
-				return $path;
-			}
+			return $path;
 		}
 		
 		// let php throw some nice error message

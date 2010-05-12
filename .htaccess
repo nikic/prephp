@@ -7,4 +7,4 @@ RewriteCond %{REQUEST_URI} !prephp/prephp/
 # prephp gets the variables
 # prefixed with prephp_
 # path: relative to this .htaccess
-RewriteRule ^(.*\.php[345]?)$ prephp/prephp.php?prephp_path=$1 [QSA,L]
+RewriteRule ^(.*\.php5?)$ prephp/prephp.php?prephp_path=$1 [QSA,L]

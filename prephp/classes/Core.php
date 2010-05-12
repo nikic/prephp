@@ -1,17 +1,18 @@
 <?php
 	require_once 'Exception.php';
 	
-	// todo: rethink the whole thing.
-	// Everything feels like a dirty hack...
-	
 	abstract class Prephp_Core_Abstract
 	{
+		//
+		// Singleton stuff
+		//
+		
 		protected static $instance; // Singleton instance
 		final private function __clone() {} // block cloning
 		
 		public static function getInstance() {
 			if (!class_exists('Prephp_Core')) {
-				throw new Prephp_Exception('You have to define an Prephp_Core!');
+				throw new Prephp_Exception('You have to define a Prephp_Core!');
 			}
 			
 			if (!isset(Prephp_Core::$instance)) {
@@ -21,15 +22,58 @@
 			return Prephp_Core::$instance;
 		}
 		
-		// default configuration
+		//
+		// Default configuration
+		//
+		
 		const sourceDir = '..';
 		const cacheDir = '../cache';
 		
-		const listenersFile = 'listeners.php';
+		protected function registerListeners() {
+			$p = $this->preprocessor;
+			
+			require_once 'listeners/core.php';
+			require_once 'listeners/arrayAccess.php';
+			require_once 'listeners/funcRetCall.php';
+			
+			// PHP 5.3 simulators
+			if (version_compare(PHP_VERSION, '5.3', '<')) {
+				require_once 'listeners/lambda.php';
+				require_once 'listeners/const.php';
+				require_once 'listeners/varClassStatic.php';
+				
+				$p->registerStreamManipulator(T_STRING, 'prephp_DIR_simulator');
+				$p->registerStreamManipulator(T_STRING, 'prephp_use_simulator');
+				
+				$p->registerStreamManipulator(T_FUNCTION, 'prephp_lambda');
+				$p->registerStreamManipulator(T_CONST, 'prephp_const');
+				
+				$p->registerStreamManipulator(array(T_VARIABLE, T_DOLLAR), 'prephp_varClassStatic');
+			}
+			
+			// PHP Extenders
+			$p->registerStreamManipulator(array(T_STRING, T_VARIABLE), 'prephp_arrayAccess');
+			$p->registerStreamManipulator(array(T_STRING, T_VARIABLE), 'prephp_funcRetCall');
+			
+			// Core Listeners
+			$p->registerTokenCompiler(T_LINE, 'prephp_LINE');
+			
+			$p->registerStreamManipulator(array(T_REQUIRE, T_INCLUDE, T_REQUIRE_ONCE, T_INCLUDE_ONCE), 'prephp_include');
+			$p->registerStreamManipulator(T_DIR, 'prephp_DIR');
+			
+			$p->registerTokenCompiler(T_FILE, 'prephp_FILE');
+			$p->registerTokenCompiler(T_STRING, 'prephp_real_FILE');
+		}
 		
-		public function http_404() {}
+		public function http_404($accessPath) {
+			header('HTTP/1.1 404 Not Found');
+			
+			echo 'The file you accessed (', htmlspecialchars($accessPath),') does not exist in the specified source directory.';
+		}
 		
-		// and here our code really starts ...
+		//
+		// Main functional code
+		//
 		
 		protected $preprocessor;
 		
@@ -42,7 +86,7 @@
 			}
 			
 			if (!is_writeable(Prephp_Core::cacheDir) && !mkdir(Prephp_Core::cacheDir, 0777, true)) {
-				throw new Prephp_Exception('cacheDir not writeable');
+				throw new Prephp_Exception('cacheDir not writeable and not createable');
 			}
 		}
 		
@@ -53,24 +97,33 @@
 				
 				$this->preprocessor = new Prephp_Preprocessor();
 				
-				require_once Prephp_Core::listenersFile;
+				$this->registerListeners();
 			}
 			
 			return $this->preprocessor;
 		}
 		
-		// process file, return filepath (in cache)
-		public function process($accessPath) {			
-			if (!$sourcePath = $this->getAsSource($accessPath, true)) {
+		// first file is executed, not processed
+		public function execute($accessPath) {
+			$sourcePath = $this->accessToSource($accessPath);
+			
+			if (false === $sourcePath || false === $cachePath = $this->process($sourcePath)) {
+				$this->http_404($accessPath);
+				die();
+			}
+			
+			$this->executer = $sourcePath;
+			
+			return $cachePath;
+		}
+		
+		// processes file, returns cachePath
+		public function process($sourcePath) {			
+			if (!is_readable($sourcePath)) {
 				return false;
 			}
 			
-			// first processed file becomes executer
-			if (empty($this->executer)) {
-				$this->executer = $sourcePath;
-			}
-			
-			$cachePath = $this->getAsCache($accessPath);
+			$cachePath = $this->sourceToCache($sourcePath);
 			
 			if ($this->needsRebuild($sourcePath, $cachePath)) {
 				$this->compile($sourcePath, $cachePath);
@@ -88,32 +141,26 @@
 		public function compile($sourcePath, $cachePath) {
 			$this->current = $sourcePath;
 			
-			if (($source = @file_get_contents($sourcePath)) === false) {
+			if (false === $source = file_get_contents($sourcePath)) {
 				throw new Prephp_Exception('Could not file_get_contents '.$sourcePath);
 			}
 			
-			$p = $this->getPreprocessor();
-			
-			$source = $p->preprocess($source);
+			$source = $this->getPreprocessor()->preprocess($source);
 			
 			if (!file_exists(dirname($cachePath)) && !mkdir(dirname($cachePath), 0777, true)) {
 				throw new Prephp_Exception('Cache directory '.dirname($cachePath).' didn\'t exist and couldn\'t be created');
 			}
 			
-			if (@file_put_contents($cachePath, $source) === false) {
+			if (false === file_put_contents($cachePath, $source)) {
 				throw new Prephp_Exception('Couldn\'t file_put_contents to '.$cachePath);
 			}
 		}
 		
-		public function getAsSource($accessPath, $checkExists = false) {
-			if (!$checkExists) {
-				return realpath(Prephp_Core::sourceDir) . DIRECTORY_SEPARATOR . $accessPath;
-			}
-			
+		public function accessToSource($accessPath) {
 			return realpath(Prephp_Core::sourceDir . DIRECTORY_SEPARATOR . $accessPath);
 		}
-		public function getAsCache($accessPath) {
-			return realpath(Prephp_Core::cacheDir) . DIRECTORY_SEPARATOR . $accessPath;
+		public function sourceToCache($sourcePath) {
+			return str_replace(realpath(Prephp_Core::sourceDir), realpath(Prephp_Core::cacheDir), $sourcePath);
 		}
 		
 		public function getExecuter() {

@@ -1,19 +1,31 @@
 <?php
-	function prephp_varClassStatic($tokenStream, $iClass) {
-		$tClass = $tokenStream[$iClass];
+	function prephp_varClassStatic($tokenStream, $iStart) {
+		$i = $iStart;
+		$numof = count($tokenStream);
 		
-		if (!$tokenStream[$i = $tokenStream->skipWhitespace($iClass)]->is(T_PAAMAYIM_NEKUDOTAYIM)) {
+		// count number of tokens before $class
+		$dollarClass = 0;
+		for (; $i<$numof && $tokenStream[$i]->is(T_DOLLAR); ++$i) {
+			++$dollarClass;
+		}
+		
+		if (!$tokenStream[$i]->is(T_VARIABLE)) {
+			return; // not a variable (syntax error, actually)
+		}
+		
+		$tClass = $tokenStream[$i];
+		
+		if (!$tokenStream[$i = $tokenStream->skipWhitespace($i)]->is(T_PAAMAYIM_NEKUDOTAYIM)) {
 			return; // not scope resolution call
 		}
 		
 		$i = $tokenStream->skipWhitespace($i);
 		
-		// count number of dollars before main
-		$dollar = 0;
-		while ($tokenStream[$i++]->is(T_DOLLAR)) {
-			$dollar++;
+		// count number of dollarMains before main
+		$dollarMain = 0;
+		for (; $i<$numof && $tokenStream[$i]->is(T_DOLLAR); ++$i) {
+			++$dollarMain;
 		}
-		$i--; // we walked one too far
 		
 		if (!$tokenStream[$i]->is(array(T_STRING, T_VARIABLE))) {
 			return;
@@ -32,13 +44,14 @@
 			case 'c': // constant
 				$const = $tokenStream[$iMain]->getContent();
 				
-				$tokenStream->extractStream($iClass, $iMain); // remove
-				$tokenStream->insertStream($iClass, array(
+				$tokenStream->extractStream($iStart, $iMain); // remove
+				$tokenStream->insertStream($iStart, array(
 					new Prephp_Token(
 						T_STRING,
 						'constant'
 					),
 					'(',
+						$dollarClass?array_fill(0, $dollarClass, '$'):null,
 						$tClass,
 						'.',
 						new Prephp_Token(
@@ -61,8 +74,8 @@
 				$sArgumentList->extractStream(0, 0); // remove (
 				$sArgumentList->extractStream(count($sArgumentList)-1, count($sArgumentList)-1); // remove )
 				
-				$tokenStream->extractStream($iClass, $iMain);
-				$tokenStream->insertStream($iClass, array(
+				$tokenStream->extractStream($iStart, $iMain);
+				$tokenStream->insertStream($iStart, array(
 					new Prephp_Token(
 						T_STRING,
 						'call_user_func'
@@ -73,9 +86,10 @@
 							'array'
 						),
 						'(',
+							$dollarClass?array_fill(0, $dollarClass, '$'):null,
 							$tClass,
 							',',
-							$tMethod->is(T_VARIABLE)&&$dollar?array_fill(0, $dollar, '$'):null,
+							$tMethod->is(T_VARIABLE)&&$dollarMain?array_fill(0, $dollarMain, '$'):null,
 							$tMethod,
 						')',
 						count($sArgumentList)?',':null,
@@ -87,14 +101,15 @@
 				$tProperty = $tokenStream[$iMain];
 				$property = substr($tProperty->getContent(), 1);
 				
-				$tokenStream->extractStream($iClass, $iMain);
-				$tokenStream->insertStream($iClass, array(
+				$tokenStream->extractStream($iStart, $iMain);
+				$tokenStream->insertStream($iStart, array(
 					'(', // encapsulate everything in brackets
 						new Prephp_Token(
 							T_STRING,
 							'property_exists'
 						),
 						'(',
+							$dollarClass?array_fill(0, $dollarClass, '$'):null,
 							$tClass,
 							',',
 							new Prephp_Token(
@@ -113,6 +128,7 @@
 									'\'return \''
 								),
 								'.',
+								$dollarClass?array_fill(0, $dollarClass, '$'):null,
 								$tClass,
 								'.',
 								new Prephp_Token(
@@ -120,12 +136,12 @@
 									'\'::$\''
 								),
 								'.',
-								// depending on whether there are $dollars
-								$dollar
-									// either insert the dollars and the original T_VARIABLE
+								// depending on whether there are $dollarMains
+								$dollarMain
+									// either insert the dollarMains and the original T_VARIABLE
 									?
 										array(
-											array_fill(0, $dollar, '$'),
+											array_fill(0, $dollarMain, '$'),
 											$tProperty
 										)
 									// or a string containing the property name

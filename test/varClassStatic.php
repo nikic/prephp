@@ -18,6 +18,7 @@ Output:
 	}
 	
 	$class = 'Foo';
+	$stringWithClass = 'class';
 	$method = 'method';
 	$property = 'property';
 	
@@ -34,5 +35,7 @@ Output:
 	
 	testStrict($class::$$$$method(), 'hi', '$class::$$$$method()');
 	testStrict($class::$$property, 'hi', '$class::$$property');
+	
+	testStrict($$stringWithClass::$property, 'hi', '$$class::$property');
 ?>
 </pre>

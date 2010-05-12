@@ -20,7 +20,7 @@
 		
 		//$p->registerSourcePreparator('prephp_nowdoc');
 		
-		$p->registerStreamManipulator(T_VARIABLE, 'prephp_varClassStatic');
+		$p->registerStreamManipulator(array(T_VARIABLE, T_DOLLAR), 'prephp_varClassStatic');
 	}
 	
 	// PHP Extenders

@@ -1,6 +1,6 @@
 <pre>
-Subj:
-Example:
+Subj: use a class variable for scope resolution operator
+Example: $class::const, $class::$property, $class::method()
 <hr />
 Output:
 <?php

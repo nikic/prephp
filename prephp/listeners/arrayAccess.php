@@ -1,8 +1,17 @@
 <?php
 	function prephp_arrayAccess($tokenStream, $iCallStart) {
-		$i = $tokenStream->skipWhitespace($iCallStart);
+		$i = $iCallStart;
+		$numof = count($tokenStream);
+		
+		// skip dollars
+		for (; $i < $numof && $tokenStream[$i]->is(T_DOLLAR); ++$i);
+		
+		$i = $tokenStream->skipWhitespace($i);
 		if ($tokenStream[$i]->is(array(T_PAAMAYIM_NEKUDOTAYIM, T_OBJECT_OPERATOR))) {
 			$i = $tokenStream->skipWhitespace($i);
+			
+			// skip dollars
+			for (; $i < $numof && $tokenStream[$i]->is(T_DOLLAR); ++$i);
 			
 			// the following cannot occur if syntax's correct, actually
 			if (!$tokenStream[$i]->is(array(T_STRING, T_VARIABLE))) {

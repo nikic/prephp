@@ -53,7 +53,7 @@
 			
 			// PHP Extenders
 			$p->registerStreamManipulator(array(T_STRING, T_VARIABLE, T_DOLLAR), 'prephp_arrayAccess');
-			$p->registerStreamManipulator(array(T_STRING, T_VARIABLE), 'prephp_funcRetCall');
+			$p->registerStreamManipulator(array(T_STRING, T_VARIABLE, T_DOLLAR), 'prephp_funcRetCall');
 			
 			// Core Listeners
 			$p->registerTokenCompiler(T_LINE, 'prephp_LINE');

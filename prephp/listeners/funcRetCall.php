@@ -1,8 +1,17 @@
 <?php
 	function prephp_funcRetCall($tokenStream, $iFirstFuncStart) {
-		$i = $tokenStream->skipWhitespace($iFirstFuncStart);
+		$i = $iFirstFuncStart;
+		$numof = count($tokenStream);
+		
+		// skip dollars
+		for (; $i < $numof && $tokenStream[$i]->is(T_DOLLAR); ++$i);
+		
+		$i = $tokenStream->skipWhitespace($i);
 		if ($tokenStream[$i]->is(array(T_PAAMAYIM_NEKUDOTAYIM, T_OBJECT_OPERATOR))) {
 			$i = $tokenStream->skipWhitespace($i);
+			
+			// skip dollars
+			for (; $i < $numof && $tokenStream[$i]->is(T_DOLLAR); ++$i);
 			
 			// the following cannot occur if syntax's correct, actually
 			if (!$tokenStream[$i]->is(array(T_STRING, T_VARIABLE))) {

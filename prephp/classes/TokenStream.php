@@ -35,12 +35,17 @@
 			'^' => T_CARET,
 			'~' => T_TILDE,
 			'`' => T_BACKTICK,
+			'\\' => T_NS_SEPARATOR,
 		);
 		
-		// expects token array in token_get_all notation
-		public function __construct($tokenArray) {
+		// expects source code
+		public function __construct($source = '') {
+			ob_start();
+			$tokens = token_get_all($source);
+			$errors = ob_get_clean();
+			
 			$line = 1;
-			foreach ($tokenArray as $token) {
+			foreach ($tokens as $token) {
 				if (is_string($token)) {
 					$this->tokens[] = new Prephp_Token(
 						self::$customTokens[$token],
@@ -56,6 +61,36 @@
 					);
 					
 					$line += substr_count($token[1], "\n");
+				}
+			}
+			
+			// There were E_COMPILE_WARNINGs, e.g.
+			// <b>Warning</b>:  Unexpected character in input:  '\' (ASCII=92) state=1 in [...]
+			// therefore look for #'(.)'#
+			if ($errors != '' && preg_match_all('#\'(.)\'#', $errors, $matches, PREG_PATTERN_ORDER)) {
+				$chars = $matches[1];
+				$c = count($chars);
+				
+				$i = 0; // string offset in source
+				$count = count($this->tokens);
+				for ($n = 0; $c && $n < $count; ++$n) {
+					$s = $this->tokens[$n]->getContent();
+					
+					$l = strlen($s);
+					if (substr($source, $i, $l) == $s) {
+						$i += $l;
+						continue; // source matches token
+					}
+					
+					// not the missing char
+					if ($source[$i] != $chars[0]) {
+						throw new Prephp_Exception('Token Stream construction failed. \''.$source[$i].'\' found, \''.$chars[0].'\' expected');
+					}
+					
+					$this->insertToken($n, array_shift($chars));
+					++$i;
+					++$count;
+					--$c;
 				}
 			}
 		}
@@ -220,7 +255,7 @@
 		// returns a Prephp_Token_Stream containing elements $from to $to
 		// and *removes* it from the original stream
 		public function extractStream($from, $to) {
-			$tokenStream = new Prephp_Token_Stream(array());
+			$tokenStream = new Prephp_Token_Stream;
 			$tokenStream->appendStream(
 				array_splice($this->tokens, $from, $to - $from + 1, array())
 			);
@@ -342,7 +377,7 @@
 		public function offsetSet($offset, $value)
 		{
 			if(!($value instanceof Prephp_Token)) {
-				throw new Prephp_Exception('Expecting Prephp_Token');
+				throw new InvalidArgumentException('Cannot set offset '.$offset.': Expecting Prephp_Token');
 			}
 			
 			$this->tokens[$offset] = $value;

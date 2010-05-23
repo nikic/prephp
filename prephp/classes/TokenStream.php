@@ -299,9 +299,13 @@
 			}
 		}
 		
-		// need extractToken?
+		// extracts token as $i moving all other tokens down
+		public function extractToken($i) {
+			$stream = $this->extractStream($i, $i);
+			return $stream[0];
+		}
 		
-		// inserts token at $i moving all other tokens down
+		// inserts token at $i moving all other tokens up
 		public function insertToken($i, $token) {
 			$this->insertStream($i, // maybe implement this more efficient?
 				array(

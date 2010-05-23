@@ -7,7 +7,10 @@
 		protected $streamManipulators = array();
 		protected $tokenCompilers = array();
 		
-		/* register event listeners, stream manipulators and token compilers */
+		// register sourcePreparators, streamManipulators and tokenCompilers
+		
+		// sourcePreparators get the source passed as only argument
+		// and must return some source
 		public function registerSourcePreparator($callback) {
 			if (!is_callable($callback)) {
 				throw new InvalidArgumentException('Source Preparator not callable!');
@@ -16,6 +19,9 @@
 			$this->sourcePreparators[] = $callback;
 		}
 		
+		// streamManipulators get the tokenStream passed as first argument and the integral
+		// position of the found token as the second argument. streamManipulators manipulate
+		// the passed tokenStream. They do not return
 		public function registerStreamManipulator($tokens, $callback) {
 			if (!is_callable($callback)) {
 				throw new InvalidArgumentException('Stream Manipulator not callable!');
@@ -28,6 +34,8 @@
 			$this->streamManipulators[] = array($callback, $tokens);
 		}
 		
+		// tokenCompilers get the token passed as the only argument and have to return either
+		// false or some content to be inserted into the source
 		public function registerTokenCompiler($tokens, $callback) {
 			if (!is_callable($callback)) {
 				throw new InvalidArgumentException('Token Compiler not callable!');
@@ -42,6 +50,7 @@
 			}
 		}
 		
+		// this does the magic, preprocess my source!
 		public function preprocess($source) {
 			// FIRST: prepare source (sourcePreparator)
 			foreach ($this->sourcePreparators as $preparator) {
@@ -49,7 +58,7 @@
 			}
 			
 			// get token stream
-			$tokenStream = new Prephp_Token_Stream(token_get_all($source));
+			$tokenStream = new Prephp_Token_Stream($source);
 			
 			// SECOND: manipulate tokens
 			foreach ($this->streamManipulators as $manipulator) {

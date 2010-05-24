@@ -1,8 +1,7 @@
 <?php
 	// This class' job is to simulate PHP's inclusion behaviour
-	// I tried to base it on PHP's implementation, but I think there still are differences
-	// for example this class will make some problems with symlinks
-	// note for future: resolve symlinks
+	// I tried to base it on PHP's implementation, but there are still differences,
+	// e.g. this class does not resolve symlinks
 	
 	class Prephp_Path
 	{

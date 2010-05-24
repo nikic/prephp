@@ -54,7 +54,7 @@
 		public function preprocess($source) {
 			// FIRST: prepare source (sourcePreparator)
 			foreach ($this->sourcePreparators as $preparator) {
-				$source = $preparator($source);
+				$source = call_user_func($preparator, $source);
 			}
 			
 			// get token stream
@@ -65,7 +65,7 @@
 				list($callback, $tokens) = $manipulator;
 				foreach ($tokenStream as $i=>$token) {
 					if ($token->is($tokens)) {
-						$callback($tokenStream, $i);
+						call_user_func($callback, $tokenStream, $i);
 					}
 				}
 			}
@@ -75,7 +75,7 @@
 			foreach ($tokenStream as $token) {
 				if (isset($this->tokenCompilers[$token->getTokenId()])) {
 					foreach ($this->tokenCompilers[$token->getTokenId()] as $compiler) {
-						$ret = $compiler($token);
+						$ret = call_user_func($compiler, $token);
 						if ($ret !== false) {
 							$token = new Prephp_Token(
 								$token->getTokenId(),

@@ -82,7 +82,7 @@
 					),
 					'(',
 						new Prephp_Token(
-							T_STRING,
+							T_ARRAY,
 							'array'
 						),
 						'(',
@@ -119,7 +119,7 @@
 						')',
 						'?',
 							new Prephp_Token(
-								T_STRING,
+								T_EVAL,
 								'eval'
 							),
 							'(',

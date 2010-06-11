@@ -1,4 +1,5 @@
 <?php
+if (!function_exists('prephp_use_simulator')) {
 	function prephp_use_simulator($tokenStream, $i) {
 		if ($tokenStream[$i]->getContent() == 'use') {
 			$tokenStream[$i] = new Prephp_Token(
@@ -8,6 +9,7 @@
 			);
 		}
 	}
+}
 	
 	/*
 		Basic idea of our implementation of lamda functions and closures:

@@ -41,21 +41,36 @@
 				require_once 'listeners/lambda.php';
 				require_once 'listeners/const.php';
 				require_once 'listeners/varClassStatic.php';
+				require_once 'listeners/namespaces.php';
 				
 				$p->registerStreamManipulator(T_STRING, 'prephp_DIR_simulator');
 				$p->registerStreamManipulator(T_STRING, 'prephp_use_simulator');
+				$p->registerStreamManipulator(T_STRING, 'prephp_namespace_simulator');
+				$p->registerStreamManipulator(T_STRING, 'prephp_ns_c_simulator');
 				
 				$p->registerStreamManipulator(T_FUNCTION, 'prephp_lambda');
 				$p->registerStreamManipulator(T_CONST, 'prephp_const');
 				
 				$p->registerStreamManipulator(array(T_VARIABLE, T_DOLLAR), 'prephp_varClassStatic');
+				
+				// namespaces
+				$p->registerSourcePreparator(array('Prephp_Namespace', 'reset'));
+				
+				$p->registerStreamManipulator(T_NAMESPACE, array('Prephp_Namespace', 'NS'));
+				$p->registerStreamManipulator(T_USE, array('Prephp_Namespace', 'alias'));
+				
+				$p->registerStreamManipulator(T_CLASS, array('Prephp_Namespace', 'registerClass'));
+				$p->registerStreamManipulator(array(T_FUNCTION, T_CONST), array('Prephp_Namespace', 'registerOther'));
+				
+				$p->registerStreamManipulator(array(T_STRING, T_NS_SEPARATOR), array('Prephp_Namespace', 'resolve'));
+				$p->registerTokenCompiler(T_NS_C, array('Prephp_Namespace', 'NS_C'));
 			}
 			
 			// PHP Extenders
 			$p->registerStreamManipulator(array(T_STRING, T_VARIABLE, T_DOLLAR), 'prephp_arrayAccess');
 			$p->registerStreamManipulator(array(T_STRING, T_VARIABLE, T_DOLLAR), 'prephp_funcRetCall');
 			
-			// Core Listeners
+			// Core
 			$p->registerTokenCompiler(T_LINE, 'prephp_LINE');
 			
 			$p->registerStreamManipulator(array(T_REQUIRE, T_INCLUDE, T_REQUIRE_ONCE, T_INCLUDE_ONCE), 'prephp_include');

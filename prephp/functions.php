@@ -27,4 +27,30 @@
 	function prephp_rt_arrayAccess($array, $access) {
 		return $array[$access];
 	}
+	
+	// NS runtime function resolver
+	function prephp_rt_checkFunction($inNS, $inGlobal) {
+		if (function_exists($inNS)) {
+			return $inNS;
+		}
+		elseif (function_exists($inGlobal)) {
+			return $inGlobal;
+		}
+		else {
+			throw new Prephp_Exception('NS runtime function resolver: The function '.$inGlobal.' does neither exist in current nor in global namespace.');
+		}
+	}
+	
+	// NS runtime constant resolver
+	function prephp_rt_checkConstant($inNS, $inGlobal) {
+		if (defined($inNS)) {
+			return constant($inNS);
+		}
+		elseif (defined($inGlobal)) {
+			return constant($inGlobal);
+		}
+		else {
+			throw new Prephp_Exception('NS runtime constant resolver: The constant '.$inGlobal.' does neither exist in current nor in global namespace.');
+		}
+	}
 ?>

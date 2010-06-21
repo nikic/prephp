@@ -75,6 +75,7 @@
 			
 			$p->registerStreamManipulator(array(T_REQUIRE, T_INCLUDE, T_REQUIRE_ONCE, T_INCLUDE_ONCE), 'prephp_include');
 			$p->registerStreamManipulator(T_DIR, 'prephp_DIR');
+			$p->registerStreamManipulator(T_STRING, 'prephp_preparePath');
 			
 			$p->registerTokenCompiler(T_FILE, 'prephp_FILE');
 			$p->registerTokenCompiler(T_STRING, 'prephp_real_FILE');

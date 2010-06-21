@@ -23,6 +23,11 @@
 		return $fileName;
 	}
 	
+	function prephp_rt_preparePath($path) {
+		require_once './classes/Path.php';
+		return Prephp_Path::normalize($path, dirname(Prephp_Core::getInstance()->getExecuter()));
+	}
+	
 	// func()[n] to prephp_functionArrayAccess(func(), n)
 	function prephp_rt_arrayAccess($array, $access) {
 		return $array[$access];

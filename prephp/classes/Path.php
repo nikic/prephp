@@ -30,6 +30,8 @@
 				return array($filename);
 			}
 			
+			$filename = self::normalizeSlashes($filename);
+			
 			if (self::isRelative($filename) || self::isAbsolute($filename)) {
 				return array(self::normalize($filename, $executer));
 			}
@@ -41,11 +43,7 @@
 				
 				foreach ($include_paths as $path) {
 					try {
-						if (self::isRelative($path)) {
-							$path = $executer . self::$slash . $path;
-						}
-						
-						$paths[] = self::normalize($filename, $path);
+						$paths[] = self::normalize($path.self::$slash.$filename, $executer);
 					}
 					catch(InvalidArgumentException $e) {}
 				}

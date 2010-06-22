@@ -14,16 +14,6 @@
 		return false;
 	}
 	
-	function prephp_DIR_simulator($tokenStream, $i) {
-		if ($tokenStream[$i]->getContent() == '__DIR__') {
-			$tokenStream[$i] = new Prephp_Token(
-				T_DIR,
-				'__DIR__',
-				$tokenStream[$i]->getLine()
-			);
-		}
-	}
-	
 	function prephp_DIR($tokenStream, $i) {		
 		$tokenStream->extractStream($i, $i); // remove __DIR__
 		

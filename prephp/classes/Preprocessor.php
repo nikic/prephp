@@ -4,10 +4,17 @@
 	class Prephp_Preprocessor
 	{
 		protected $sourcePreparators = array();
+		protected $ensureTokens = array();
 		protected $streamManipulators = array();
 		protected $tokenCompilers = array();
 		
-		// register sourcePreparators, streamManipulators and tokenCompilers
+		// ensure that a token exists
+		// e.g. ensure that T_STRING(__NAMESPACE__) is converted to
+		// T_NS_C(__NAMESPACE__) do ensureToken('__NAMESPACE__', T_NS_C);
+		// works only for T_STRINGs
+		public function ensureToken($content, $tokenId) {
+			$ensureTokens[$content] = $tokenId;
+		}
 		
 		// sourcePreparators get the source passed as only argument
 		// and must return some source
@@ -52,7 +59,7 @@
 		
 		// this does the magic, preprocess my source!
 		public function preprocess($source) {
-			// FIRST: prepare source (sourcePreparator)
+			// prepare source (sourcePreparator)
 			foreach ($this->sourcePreparators as $preparator) {
 				$source = call_user_func($preparator, $source);
 			}
@@ -60,7 +67,19 @@
 			// get token stream
 			$tokenStream = new Prephp_Token_Stream($source);
 			
-			// SECOND: manipulate tokens
+			// ensure tokens
+			$count = count($tokenStream);
+			for ($i = 0; $i < $count; ++$i) {
+				if ($tokenStream[$i]->is(T_STRING) && isset($this->ensureTokens[$tokenStream[$i]->getContent()])) {
+					$tokenStream[$i] = new Prephp_Token(
+						$this->ensureTokens[$tokenStream[$i]->getContent()],
+						$tokenStream[$i]->getContent(),
+						$tokenStream[$i]->getLine()
+					);
+				}
+			}
+			
+			// manipulate tokens
 			foreach ($this->streamManipulators as $manipulator) {
 				list($callback, $tokens) = $manipulator;
 				foreach ($tokenStream as $i=>$token) {
@@ -70,7 +89,7 @@
 				}
 			}
 			
-			// THIRD: compile source
+			// compile source
 			$source = '';
 			foreach ($tokenStream as $token) {
 				if (isset($this->tokenCompilers[$token->getTokenId()])) {

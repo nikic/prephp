@@ -32,6 +32,11 @@
 		protected function registerListeners() {
 			$p = $this->preprocessor;
 			
+			$p->ensureToken('use', T_USE);
+			$p->ensureToken('namespace', T_NAMESPACE);
+			$p->ensureToken('__NAMESPACE__', T_NS_C);
+			$p->ensureToken('__DIR__', T_DIR);
+			
 			require_once 'listeners/core.php';
 			require_once 'listeners/arrayAccess.php';
 			require_once 'listeners/funcRetCall.php';
@@ -42,11 +47,6 @@
 				require_once 'listeners/const.php';
 				require_once 'listeners/varClassStatic.php';
 				require_once 'listeners/namespaces.php';
-				
-				$p->registerStreamManipulator(T_STRING, 'prephp_DIR_simulator');
-				$p->registerStreamManipulator(T_STRING, 'prephp_use_simulator');
-				$p->registerStreamManipulator(T_STRING, 'prephp_namespace_simulator');
-				$p->registerStreamManipulator(T_STRING, 'prephp_ns_c_simulator');
 				
 				$p->registerStreamManipulator(T_FUNCTION, 'prephp_lambda');
 				$p->registerStreamManipulator(T_CONST, 'prephp_const');

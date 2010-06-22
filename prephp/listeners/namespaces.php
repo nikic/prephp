@@ -1,36 +1,4 @@
 <?php
-if (!function_exists('prephp_use_simulator')) {
-	function prephp_use_simulator($tokenStream, $i) {
-		if ($tokenStream[$i]->getContent() == 'use') {
-			$tokenStream[$i] = new Prephp_Token(
-				T_USE,
-				'use',
-				$tokenStream[$i]->getLine()
-			);
-		}
-	}
-}
-	
-	function prephp_namespace_simulator($tokenStream, $i) {
-		if ($tokenStream[$i]->getContent() == 'namespace') {
-			$tokenStream[$i] = new Prephp_Token(
-				T_NAMESPACE,
-				'namespace',
-				$tokenStream[$i]->getLine()
-			);
-		}
-	}
-	
-	function prephp_ns_c_simulator($tokenStream, $i) {
-		if ($tokenStream[$i]->getContent() == '__NAMESPACE__') {
-			$tokenStream[$i] = new Prephp_Token(
-				T_NS_C,
-				'__NAMESPACE__',
-				$tokenStream[$i]->getLine()
-			);
-		}
-	}
-	
 	class Prephp_Namespace
 	{
 		// replaces \

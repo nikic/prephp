@@ -251,7 +251,10 @@ if (!function_exists('prephp_use_simulator')) {
 				($ns?$ns.self::SEPARATOR:'').$tokenStream[$iName]->getContent()
 			);
 			
-			$iStart = $tokenStream->skipWhitespace($iName);
+			$iStart = $tokenStream->findToken($iName, T_OPEN_CURLY);
+			if ($iStart === false) {
+				throw new Prephp_Exception('NS class registration: Unexpected END, expected \'{\'');
+			}
 			$iEnd   = $tokenStream->findComplementaryBracket($iStart);
 			
 			self::$classes[$tokenStream[$iStart]->getLine()] = $tokenStream[$iEnd]->getLine();

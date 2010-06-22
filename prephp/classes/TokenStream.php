@@ -177,7 +177,7 @@
 							T_CLOSE_CURLY,
 					))
 				) {
-					throw new Prephp_Exception('TokenStream (complementaryBracket): Token at '.$i.' is not an opening bracket!');
+					throw new Prephp_Exception('TokenStream/complementaryBracket: Unexpected '.token_name($this->tokens[$i]->getTokenId()).' at '.$i.', expected opening bracket!');
 				}
 				
 				$complements = array(
@@ -194,7 +194,7 @@
 							T_OPEN_CURLY,
 					))
 				) {
-					throw new Prephp_Exception('TokenStream (complementaryBracket): Token at '.$i.' is not an opening bracket!');
+					throw new Prephp_Exception('TokenStream/complementaryBracket: Unexpected '.token_name($this->tokens[$i]->getTokenId()).' at '.$i.', expected opening bracket!');
 				}
 				
 				$complements = array(
@@ -212,7 +212,7 @@
 				$i = $this->findToken($i, array($type, $compl), $reverse);
 				
 				if ($i === false) {
-					throw new Prephp_Exception('TokenStream (complementaryBracket): Open and Close Tokens not matching.');
+					throw new Prephp_Exception('TokenStream/complementaryBracket: Opening and closing brackets not matching.');
 				}
 				
 				if ($this->tokens[$i]->is($type)) { // opening

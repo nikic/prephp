@@ -1,46 +1,49 @@
 <?php
 	function prephp_funcRetCall($tokenStream, $iFirstFuncStart) {
 		$i = $iFirstFuncStart;
-		$numof = count($tokenStream);
+        
+		do {
+            if ($tokenStream[$i]->is(T_DOLLAR)) {
+                $i = $tokenStream->skip($i, T_DOLLAR);
+                
+                // invalid syntax
+                if (!$tokenStream[$i]->is(T_VARIABLE)) {
+                    return;
+                }
+            }
+            
+            $i = $tokenStream->skipWhitespace($i);
+            
+            if ($tokenStream[$i]->is(T_OPEN_SQUARE)) {
+                $i = $tokenStream->complementaryBracket($i);
+                $i = $tokenStream->skipWhitespace($i);
+            }
+            elseif ($tokenStream[$i]->is(T_OPEN_ROUND)) {
+                $i = $tokenStream->complementaryBracket($i);
+                $i = $tokenStream->skipWhitespace($i);
+            }
+        } while ($tokenStream[$i]->is(T_PAAMAYIM_NEKUDOTAYIM, T_OBJECT_OPERATOR) && $i = $tokenStream->skipWhitespace($i));
+        
+        $iFirstFuncEnd = $tokenStream->skipWhitespace($i, true);
+        
+        // not a function call
+        if (!$tokenStream[$iFirstFuncEnd]->is(T_CLOSE_ROUND)) {
+            return;
+        }
 		
-		// skip dollars
-		for (; $i < $numof && $tokenStream[$i]->is(T_DOLLAR); ++$i);
-		
-		$i = $tokenStream->skipWhitespace($i);
-		if ($tokenStream[$i]->is(array(T_PAAMAYIM_NEKUDOTAYIM, T_OBJECT_OPERATOR))) {
-			$i = $tokenStream->skipWhitespace($i);
-			
-			// skip dollars
-			for (; $i < $numof && $tokenStream[$i]->is(T_DOLLAR); ++$i);
-			
-			// the following cannot occur if syntax's correct, actually
-			if (!$tokenStream[$i]->is(array(T_STRING, T_VARIABLE))) {
-				return;
-			}
-			
-			$i = $tokenStream->skipWhitespace($i);
-		}
-		
-		// not a function call
+        // not a function return value call
 		if (!$tokenStream[$i]->is(T_OPEN_ROUND)) {
 			return;
 		}
 		
-		$iFirstFuncEnd = $tokenStream->findComplementaryBracket($i);
-		$iSecondFuncStart = $tokenStream->skipWhitespace($iFirstFuncEnd);
+		$sSecondFunc = $tokenStream->extract($i, $tokenStream->complementaryBracket($i));
+		$sFirstFunc  = $tokenStream->extract($iFirstFuncStart, $iFirstFuncEnd);
 		
-		if (!$tokenStream[$iSecondFuncStart]->is(T_OPEN_ROUND)) {
-			return; // not a function return value call
-		}
-		
-		$sSecondFunc = $tokenStream->extractStream($iSecondFuncStart, $tokenStream->findComplementaryBracket($iSecondFuncStart));
-		$sFirstFunc = $tokenStream->extractStream($iFirstFuncStart, $iFirstFuncEnd);
-		
-		$sSecondFunc->extractStream(0, 0); // remove (
-		$sSecondFunc->extractStream(count($sSecondFunc)-1, count($sSecondFunc)-1); // remove )
+		$sSecondFunc->extract(0); // remove (
+		$sSecondFunc->extract(count($sSecondFunc)-1); // remove )
 		
 		// now, insert call_user_func
-		$tokenStream->insertStream($iFirstFuncStart,
+		$tokenStream->insert($iFirstFuncStart,
 			array(
 				new Prephp_Token(
 					T_STRING,
@@ -48,10 +51,12 @@
 				),
 				'(',
 					$sFirstFunc,
-					count($sSecondFunc)!=0?',':null,
+					count($sSecondFunc)!=0 ? ',' : null,
 					$sSecondFunc,
 				')',
 			)
 		);
+        
+        return true;
 	}
 ?>

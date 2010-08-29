@@ -11,6 +11,7 @@ five: 5
 six: six
 seven: 7
 eight: 8
+nine: 9
 <hr />
 Output:
 <?php
@@ -19,17 +20,19 @@ Output:
 	const three = 'three';
 	const four = "four";
 	
-	const	five	= 5,
-			six		= 'six',
-			seven	= true;
+	const five	= 5,
+		  six	= 'six',
+		  seven	= true,
+          eight = one;
 	
-	echo 'one: '.one . "\n";
-	echo 'two: '.two . "\n";
-	echo 'three: '.three . "\n";
-	echo 'four: '.four . "\n";
-	echo 'five: '.five . "\n";
-	echo 'six: '.six . "\n";
-	echo 'seven: '.(6+seven) . "\n";
+	echo 'one: '   . one       . "\n";
+	echo 'two: '   . two       . "\n";
+	echo 'three: ' . three     . "\n";
+	echo 'four: '  . four      . "\n";
+	echo 'five: '  . five      . "\n";
+	echo 'six: '   . six       . "\n";
+	echo 'seven: ' . (6+seven) . "\n";
+    echo 'eight: ' . (7+eight) . "\n";
 	
 	class Foo
 	{
@@ -40,7 +43,7 @@ Output:
 	{
 	}
 	
-	const eight = 8;
-	echo 'eight: '.eight . "\n";
+	const nine = 9;
+	echo 'nine: ' . nine . "\n";
 ?>
 </pre>

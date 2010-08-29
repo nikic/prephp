@@ -4,39 +4,39 @@
 		
 		First of all, we avoided to use create_function(). Even though create_function()
 		actually is maybe the most exact implementation of lambda functions and closures
-		in php it is said to have quite some memory leaks and other problems. Therefore
-		we decided to define the functions as real php functions and replace the function
-		call with the name of the function. This name is something like
-		prephp_lambda_%{md5(mt_rand())}. In PHP a function can be called by calling a variable
+		in php it is said to have really bad performance, memory leaks and other problems.
+        Therefore we decided to define the functions as real php functions and replace the
+        function call with the name of the function. This name is something like
+		prephp_lambda_{md5(mt_rand()}. In PHP a function can be called by calling a variable
 		with the function name. Exactly this behaviour is used. The virtual functions created
 		this way are inserted at the beginning of the file the lambda function was defined in.
 		
 		To handle closured we use another trick:
-		All use()-variables are assigned to $GLOBALS[%{functionName}][%{var}].
+		All use()-variables are assigned to $GLOBALS[{functionName}][{variableName}].
 		So, if i want to use($a), it is declared like this:
 		$GLOBALS['prephp_lamda_SOMELONGSTRING']['a'] = $a;
 		Then, at the beginning of the lambda functions code block the variables are assigned back:
 		$a = $GLOBALS['prephp_lamda_SOMELONGSTRING']['a'];
 	*/
 	function prephp_lambda($tokenStream, $iFunction) {
-		if (!$tokenStream[$tokenStream->skipWhiteSpace($iFunction)]->is(T_OPEN_ROUND)) {
+		if (!$tokenStream[$tokenStream->skipWhitespace($iFunction)]->is(T_OPEN_ROUND)) {
 			return; // normal function
 		}
 		
 		// start of the function definition (including '{')
-		if (false === $iDefinition = $tokenStream->findToken($iFunction, T_OPEN_CURLY)) {
+		if (false === $iDefinition = $tokenStream->find($iFunction, T_OPEN_CURLY)) {
 			throw new Prephp_Exception("Lambda-Listener: No function definition (couldn't find '{')");
 		}
 		
 		// function definition stream
-		$sDefinition = $tokenStream->extractStream($iDefinition, $tokenStream->findComplementaryBracket($iDefinition));
+		$sDefinition = $tokenStream->extract($iDefinition, $tokenStream->complementaryBracket($iDefinition));
 		// function top (arguments and use() definition)
-		$sTop = $tokenStream->extractStream($iFunction, $iDefinition - 1);
+		$sTop = $tokenStream->extract($iFunction, $iDefinition - 1);
 		
 		$funcName = 'prephp_lambda_'.md5(mt_rand());
 		
 		// insert lambda function name as string as replacement for the function
-		$tokenStream->insertToken($iFunction,
+		$tokenStream->insert($iFunction,
 			new Prephp_Token(
 				T_CONSTANT_ENCAPSED_STRING,
 				'\''.$funcName.'\''
@@ -54,12 +54,11 @@
 		$use = array();
 
 		// to extract the function args later
-		$iArgumentsStart = $sTop->findToken(0, T_OPEN_ROUND);
-		$iArgumentsEnd = $sTop->findComplementaryBracket($iArgumentsStart);
+		$iArgumentsStart = $sTop->find(0, T_OPEN_ROUND);
+		$iArgumentsEnd = $sTop->complementaryBracket($iArgumentsStart);
 		
-		$i = $sTop->findToken($iArgumentsEnd, T_USE);
-		// check if there is a use()
-		if ($i !== false) {
+		// is use() exists
+		if (false !== $i = $sTop->find($iArgumentsEnd, T_USE)) {
 			$numof = count($sTop);
 			$isRef = false;
 			
@@ -69,7 +68,7 @@
 				}
 				elseif ($sTop[$i]->is(T_VARIABLE)) {
 					$use[] = array(
-						substr($sTop[$i]->getContent(), 1), // remove $
+						substr($sTop[$i]->content, 1), // remove $
 						$isRef
 					);
 					
@@ -79,7 +78,7 @@
 		}
 		
 		// the function arguments (including brackets)
-		$sArguments = $sTop->extractStream($iArgumentsStart, $iArgumentsEnd);
+		$sArguments = $sTop->extract($iArgumentsStart, $iArgumentsEnd);
 		
 		if (!empty($use)) {
 			// now we register the used vars as $GLOBALs
@@ -129,7 +128,7 @@
 			$aRegisterGlobals[] = ';'; // EOS
 			
 			// insert after last statement before lambda
-			$tokenStream->insertStream($tokenStream->findEOS($iFunction, true)+1,
+			$tokenStream->insert($tokenStream->findEOS($iFunction, true)+1,
 				$aRegisterGlobals
 			);
 		}
@@ -181,7 +180,7 @@
 		}
 		
 		// insert lambda function code after first T_OPEN_TAG
-		$tokenStream->insertStream($tokenStream->findToken(0, T_OPEN_TAG)+1,
+		$tokenStream->insert($tokenStream->find(0, T_OPEN_TAG)+1,
 			array(
 				new Prephp_Token(
 					T_FUNCTION,
@@ -196,7 +195,7 @@
 					$funcName
 				),
 				$sArguments,
-				'{', // These { } are reduandant, but we use them for simplicity
+				'{', // These { } are redundant, but we use them for simplicity
 					$aRedeclareVars,
 					$sDefinition,
 				'}',

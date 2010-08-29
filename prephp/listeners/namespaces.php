@@ -1,63 +1,24 @@
 <?php
 	class Prephp_Namespace
 	{
-		// replaces \
+		// replace T_NS_SEPARATOR by
 		const SEPARATOR = '__N__';
-		
-		// contains an array of type
-		// line => array('ns' => 'Foo\Bar\Test', 'use' => array('Hi' => 'Test\Hi))
+        
+        // current namespace
 		private static $ns;
-		
-		// contains an array with lines defined in self::$ns
-		private static $lines;
-		
-		// contains lines as array( from => to ) for class definitions
-		private static $classes;
-		
-		// gets the nearest NS definition line
-		private static function getLine($line) {
-			if (empty(self::$lines)) {
-				return false;
-			}
-			
-			$nearest = 0;
-			foreach (self::$lines as $l) {
-				if ($l > $nearest && $l <= $line) {
-					$nearest = $l;
-				}
-			}
-			
-			return $nearest;
-		}
-		
-		// get the ns-array for this line
-		// or specify which index of ns-array to get (either 'ns' or 'use')
-		private static function &get($line, $which = null) {
-			$line = self::getLine($line);
-			if (false === $line) {
-				// no namespaces defined
-				$array = array(
-					'ns' => '',
-					'use' => array(),
-				);
-			}
-			else {
-				$array =& self::$ns[$line];
-			}
-			
-			if ($which === null) {
-				return $array;
-			}
-			else {
-				return $array[$which];
-			}
-		}
+        
+        // current aliases as
+        // array('Hi' => 'Test\Hi')
+        private static $use;
+        
+        // false if not a class or line where class ends
+		private static $classTill;
 
 		// reset on new file (registered as sourcePreparator)
 		public static function reset($source) {
-			self::$ns = array();
-			self::$lines = array();
-			self::$classes = array();
+			self::$ns        = '';
+            self::$use       = array();
+            self::$classTill = false;
 			
 			return $source;
 		}
@@ -88,74 +49,67 @@
 					break;
 				}
 				
-				$ns  .= $tokenStream[$i]->getContent();
-				$last = $tokenStream[$i]->getTokenId();
+				$ns  .= $tokenStream[$i]->content;
+				$last = $tokenStream[$i]->type;
 			}
 			
 			// namespace declaration
 			if ($ns == '' || $ns[0] != '\\') {
-				self::$ns[$tokenStream[$iNS]->getLine()] = array(
-					'ns' => $ns,
-					'use' => array(),
-				);
-				self::$lines[] = $tokenStream[$iNS]->getLine();
+				self::$ns = $ns;
+                self::$use = array();
+                self::$classTill = false;
 				
 				// semicolon style
 				if ($tokenStream[$i]->is(T_SEMICOLON)) {
 					// remove the ; too
-					$tokenStream->extractStream($iNS, $i);
+					$tokenStream->extract($iNS, $i);
 				}
 				// bracket style
 				elseif ($tokenStream[$i]->is(T_OPEN_CURLY)) {
 					// leave the {
-					// (So a block { ... } is created
-					$tokenStream->extractStream($iNS, $i-1);
+					$tokenStream->extract($iNS, $i - 1);
 				}
 				else {
-					throw new Prephp_Exception('NS: A namespace declaration must be followed by \';\' or \'{\'');
+					throw new Prephp_Exception("NS: A namespace declaration must be followed by ';' or '{'");
 				}
 				
 				// At this point one may notice, that prephp does allow mixing
 				// semicolon and bracket style
 			}
-			// namespace lookup
+			// namespace lookup:
+            // replace T_NAMESPACE with current namespace
+            // and fully qualify it
 			else {
-				// replace T_NAMESPACE with current namespace
-				// and fully qualify it
-				$tokenStream->extractToken($iNS);
+				$tokenStream->extract($iNS);
 				
-				$parts = explode('\\', self::get($tokenStream[$iNS]->getLine(), 'ns'));
-				$count = count($parts);
-				
-				if ($count == 1) {
-					return;
-				}
-				
+                if (self::$ns == '') {
+                    return;
+                }
+                
 				$aReplace = array();
-				for ($i = 0; $i < $count; ++$i) {
+                foreach (explode('\\', self::$ns) as $part) {
 					$aReplace[] = new Prephp_Token(
 						T_NS_SEPARATOR,
 						'\\'
 					);
 					$aReplace[] = new Prephp_Token(
 						T_STRING,
-						$parts[$i]
+						$part
 					);
 				}
 				
-				$tokenStream->insertStream($iNS, $aReplace);
+				$tokenStream->insert($iNS, $aReplace);
 			}
 		}
 		
-		// streamManipulator for use clauses
+		// register use
 		public static function alias($tokenStream, $iUse) {
-			$iEOS = $tokenStream->findEOS($iUse);
+			$iEOS = $tokenStream->find($iUse, T_SEMICOLON);
 			
 			if (false === $iEOS) {
-				throw new Prephp_Exception('NS: Alias (use) definition is not terminated by EOS');
+				throw new Prephp_Exception("NS: Alias (use) definition is not terminated by ';'");
 			}
 			
-			$use =& self::get($tokenStream[$iUse]->getLine(), 'use');
 			$last = T_USE;
 			$current = '';
 			$as = false;
@@ -166,18 +120,18 @@
 				}
 				
 				if ($tokenStream[$i]->is(T_AS)) {
-					$as = '';
-				}
-				if ($tokenStream[$i]->is(T_STRING)) {
+                    $as = '';
+                }
+				elseif ($tokenStream[$i]->is(T_STRING)) {
 					if ($last == T_STRING) {
 						throw new Prephp_Exception('NS: Two T_STRINGs in alias (use) declaration must be separated by a T_NS_SEPARATOR');
 					}
 					
 					if ($last == T_AS) {
-						$as = $tokenStream[$i]->getContent();
+						$as = $tokenStream[$i]->content;
 					}
 					else {
-						$current .=	$tokenStream[$i]->getContent();
+						$current .=	$tokenStream[$i]->content;
 					}
 				}
 				elseif ($tokenStream[$i]->is(T_NS_SEPARATOR)) {
@@ -189,81 +143,90 @@
 						throw new Prephp_Exception('NS: The as section of an alias (use) declaration must not contain a T_NS_SEPARATOR');
 					}
 					
-					$current .= $tokenStream[$i]->getContent();
+					$current .= $tokenStream[$i]->content;
 				}
 				elseif ($tokenStream[$i]->is(array(T_COMMA, T_SEMICOLON))) {
 					if ($last != T_STRING) {
-						throw new Prephp_Exception('NS: A \',\' or \';\' in an alias (use) declaration must be preceeded by a T_STRING');
+						throw new Prephp_Exception("NS: A ',' or ';' in an alias (use) declaration must be preceeded by a T_STRING");
 					}
 					
-					$use[$as===false?substr($current, strrpos($current, '\\')+1):$as] = $current;
+					self::$use[$as !== false ? $as : substr($current, strrpos($current, '\\') + 1)] = $current;
 					$as = false;
 				}
 				else {
-					throw new Prephp_Exception('NS: Found '.token_name($tokenStream[$i]->getTokenId()).'. Only T_STRING, T_NS_SEPARATOR, T_AS and T_COMMA are allowed in an alias (use) declaration');
+					throw new Prephp_Exception('NS: Found ' . $tokenStream[$i]->name . '. Only T_STRING, T_NS_SEPARATOR, T_AS and T_COMMA are allowed in an alias (use) declaration');
 				}
 				
-				$last = $tokenStream[$i]->getTokenId();
+				$last = $tokenStream[$i]->type;
 			}
 			
-			$tokenStream->extractStream($iUse, $iEOS);
+			$tokenStream->extract($iUse, $iEOS);
 		}
 	
 		// register classes
 		public static function registerClass($tokenStream, $iClass) {
 			$iName = $tokenStream->skipWhitespace($iClass);
 
-			$ns = str_replace('\\', self::SEPARATOR, self::get($tokenStream[$iName]->getLine(), 'ns'));
+			$ns = str_replace('\\', self::SEPARATOR, self::$ns);
 			$tokenStream[$iName] = new Prephp_Token(
 				T_STRING,
-				($ns?$ns.self::SEPARATOR:'').$tokenStream[$iName]->getContent()
+				($ns ? $ns . self::SEPARATOR : '') . $tokenStream[$iName]->content
 			);
 			
-			$iStart = $tokenStream->findToken($iName, T_OPEN_CURLY);
+			$iStart = $tokenStream->find($iName, T_OPEN_CURLY);
 			if ($iStart === false) {
-				throw new Prephp_Exception('NS class registration: Unexpected END, expected \'{\'');
+				throw new Prephp_Exception("NS class registration: Unexpected END, expected '{'");
 			}
-			$iEnd   = $tokenStream->findComplementaryBracket($iStart);
+			$iEnd   = $tokenStream->complementaryBracket($iStart);
 			
-			self::$classes[$tokenStream[$iStart]->getLine()] = $tokenStream[$iEnd]->getLine();
+			self::$classTill = $tokenStream[$iEnd]->line;
 		}
 		
 		// register non-classes (functions and constants)
 		public static function registerOther($tokenStream, $iKeyword) {
 			// first check if we are in a class
-			$line = $tokenStream[$iKeyword]->getLine();
-			foreach (self::$classes as $start => $end) {
-				if ($line > $start && $line < $end) {
-					// we are in class, abort!
-					return;
-				}
-			}
+            if (self::$classTill !== false && self::$classTill >= $tokenStream[$iKeyword]->line) {
+                return;
+            }
 			
 			$iName = $tokenStream->skipWhitespace($iKeyword);
 			
-			$ns = str_replace('\\', self::SEPARATOR, self::get($tokenStream[$iName]->getLine(), 'ns'));
+			$ns = str_replace('\\', self::SEPARATOR, self::$ns);
 			$tokenStream[$iName] = new Prephp_Token(
 				T_STRING,
-				($ns?$ns.self::SEPARATOR:'').$tokenStream[$iName]->getContent()
+				($ns ? $ns . self::SEPARATOR : '') . $tokenStream[$iName]->content
 			);
 		}
 		
 		// tokenCompiler on T_NS_C
 		public static function NS_C($token) {
-			return '\''.self::get($token->getLine(), 'ns').'\'';
+			return "'" . self::$ns . "'";
 		}
 		
 		// resolves non-variable namespace calls
 		public static function resolve($tokenStream, $iStart) {
-			// ensure it's not a true, false or null
+            // skip true, false and null constants, they may not be overwritten, so save time executing
 			if ($tokenStream[$iStart]->is(T_STRING)
-			    && in_array($tokenStream[$iStart]->getContent(), array('true', 'false', 'null'))) {
+			    && in_array($tokenStream[$iStart]->content, array('true', 'false', 'null'))) {
 				return;
 			}
+            
+            if ($tokenStream[$tokenStream->skipWhitespace($iStart)]->is(T_OPEN_ROUND)) {
+                // these functions are under prephp's protection
+                if (in_array($tokenStream[$iStart]->content, array(
+                    'call_user_func',
+                    'prephp_rt_prepareInclude',
+                    'prephp_rt_preparePath',
+                    'prephp_rt_arrayAccess',
+                    'prephp_rt_checkFunction',
+                    'prephp_rt_checkConstant',
+                ))) {
+                    return;
+                }
+            }
 			
 			// ensure it's not a definition
-			$iPrevious = $tokenStream->skipWhitespace($iStart, true);
-			if ($iPrevious === false || $tokenStream[$iPrevious]->is(array(T_CLASS, T_FUNCTION, T_CONST))) {
+			if ($tokenStream[$tokenStream->skipWhitespace($iStart, true)]->is(T_CLASS, T_FUNCTION, T_CONST)) {
 				return; // in defintion
 			}
 			
@@ -271,7 +234,7 @@
 			
 			$ns = '';
 			$last = 0;
-			for ($i = $iStart; $i < $numof && $tokenStream[$i]->is(array(T_STRING, T_NS_SEPARATOR, T_WHITESPACE)); ++$i) {
+			for ($i = $iStart; $i < $numof && $tokenStream[$i]->is(T_STRING, T_NS_SEPARATOR, T_WHITESPACE); ++$i) {
 				if ($tokenStream[$i]->is(T_WHITESPACE)) {
 					continue;
 				}
@@ -284,37 +247,37 @@
 					throw new Prephp_Exception('NS Resolution: A T_STRING may not be preceeded by another T_STRING');
 				}
 				
-				$ns .= $tokenStream[$i]->getContent();
+				$ns .= $tokenStream[$i]->content;
 			}
 			
-			$tokenStream->extractStream($iStart, $i-1); // we went one too far
+			$tokenStream->extract($iStart, $i - 1); // we went one too far
 			
 			$ns_pos = strpos($ns, '\\');
-			$ns_before = substr($ns, 0, $ns_pos);
-			$use = self::get($tokenStream[$iStart]->getLine(), 'use');
-			$current = self::get($tokenStream[$iStart]->getLine(), 'ns');
+			$current = self::$ns;
 			
 			// aliases
 			// qualified (namespace aliases)
 			if ($ns_pos) {
-				if (isset($use[$ns_before])) {
-					$ns = substr_replace($ns, $use[$ns_before], 0, $ns_pos);
+				$ns_before = substr($ns, 0, $ns_pos);
+                
+                if (isset(self::$use[$ns_before])) {
+					$ns = substr_replace($ns, self::$use[$ns_before], 0, $ns_pos);
 				}
 				// if no alias, prepend current ns
 				else {
-					$ns = '\\'.($current==''?'':$current.'\\').$ns;
+					$ns = '\\' . ($current == '' ? '' : $current . '\\') . $ns;
 				}
 			}
 			// unqualified (class aliases)
 			else {
-				if (isset($use[$ns])) {
-					$ns = $use[$ns];
+				if (isset(self::$use[$ns])) {
+					$ns = self::$use[$ns];
 				}
 			}
 			
 			// for (now) fully qualified
 			if ($ns[0] == '\\') {
-				$tokenStream->insertToken($iStart,
+				$tokenStream->insert($iStart,
 					new Prephp_Token(
 						T_STRING,
 						str_replace('\\', self::SEPARATOR, substr($ns, 1))
@@ -327,9 +290,10 @@
 				// as in global namespace the global call is equivalent to the function
 				// call further processing is omitted here to increase code execution
 				// performance for applications not using namespaces and for better readability
-				// of code
+				// of generated code
+                // TODO: This is wrong, actually
 				if ($current == '') {
-					$tokenStream->insertToken($iStart,
+					$tokenStream->insert($iStart,
 						new Prephp_Token(
 							T_STRING,
 							$ns
@@ -346,7 +310,7 @@
 					$type = 'Constant';
 				}
 				
-				$tokenStream->insertStream($iStart,
+				$tokenStream->insert($iStart,
 					array(
 						new Prephp_Token(
 							T_STRING,
@@ -355,12 +319,12 @@
 						'(',
 							new Prephp_Token(
 								T_CONSTANT_ENCAPSED_STRING,
-								'\''.str_replace('\\', self::SEPARATOR, ($current==''?'':$current.'\\').$ns).'\''
+								"'" . str_replace('\\', self::SEPARATOR, ($current == '' ? '' : $current . '\\') . $ns) . "'"
 							),
 							',',
 							new Prephp_Token(
 								T_CONSTANT_ENCAPSED_STRING,
-								'\''.$ns.'\''
+								"'" . $ns . "'"
 							),
 						')',
 					)

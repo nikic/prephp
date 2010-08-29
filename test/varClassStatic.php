@@ -20,21 +20,20 @@ Output:
 	$class = 'Foo';
 	$stringWithClass = 'class';
 	$method = 'method';
-	$property = 'property';
+	$stringWithProperty = 'property';
 	
 	testStrict($class::constant, 'hi', '$class::constant');
 	
 	testStrict($class::method(), 'hi', '$class::method()');
-	testStrict($class::method(2), 'hi', '$class::method(args)');
+	testStrict($class::method(2), 'hi', '$class::method(arg)');
 	testStrict($class::$method(), 'hi', '$class::$method()');
+    testStrict($class::$$$$method(), 'hi', '$class::$$$$method()');
 	
 	testStrict($class::$property, 'hi', '$class::$property');
 	testStrict($class::$inexistantProperty, null, '$class::$inexistantProperty');
-	// ToDo: Throw error:
-	// Fatal error:  Access to undeclared static property: Foo::$inexistantProperty in D:\xampp\htdocs\prephp\cache\test\varClassStatic.php on line 31
-	
-	testStrict($class::$$$$method(), 'hi', '$class::$$$$method()');
-	testStrict($class::$$property, 'hi', '$class::$$property');
+    testStrict($class::$$stringWithProperty, 'hi', '$class::$$property');
+	// Todo: trigger_error:
+	// Access to undeclared static property: Foo::$inexistantProperty in ... on line ...
 	
 	testStrict($$stringWithClass::$property, 'hi', '$$class::$property');
 ?>

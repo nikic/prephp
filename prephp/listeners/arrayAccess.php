@@ -1,59 +1,62 @@
 <?php
 	function prephp_arrayAccess($tokenStream, $iCallStart) {
-		$i = $iCallStart;
-		$numof = count($tokenStream);
-		
-		// skip dollars
-		for (; $i < $numof && $tokenStream[$i]->is(T_DOLLAR); ++$i);
-		
-		$i = $tokenStream->skipWhitespace($i);
-		if ($tokenStream[$i]->is(array(T_PAAMAYIM_NEKUDOTAYIM, T_OBJECT_OPERATOR))) {
-			$i = $tokenStream->skipWhitespace($i);
-			
-			// skip dollars
-			for (; $i < $numof && $tokenStream[$i]->is(T_DOLLAR); ++$i);
-			
-			// the following cannot occur if syntax's correct, actually
-			if (!$tokenStream[$i]->is(array(T_STRING, T_VARIABLE))) {
-				return;
-			}
-			
-			$i = $tokenStream->skipWhitespace($i);
-		}
+        $i = $iCallStart;
+        
+        do {
+            if ($tokenStream[$i]->is(T_DOLLAR)) {
+                $i = $tokenStream->skip($i, T_DOLLAR);
+                
+                // invalid syntax
+                if (!$tokenStream[$i]->is(T_VARIABLE)) {
+                    return;
+                }
+            }
+            
+            $i = $tokenStream->skipWhitespace($i);
+            
+            if ($tokenStream[$i]->is(T_OPEN_SQUARE)) {
+                $i = $tokenStream->complementaryBracket($i);
+                $i = $tokenStream->skipWhitespace($i);
+            }
+            elseif ($tokenStream[$i]->is(T_OPEN_ROUND)) {
+                $i = $tokenStream->complementaryBracket($i);
+                $i = $tokenStream->skipWhitespace($i);
+            }
+        } while ($tokenStream[$i]->is(T_PAAMAYIM_NEKUDOTAYIM, T_OBJECT_OPERATOR) && $i = $tokenStream->skipWhitespace($i));
 
-		// not a function call
-		if (!$tokenStream[$i]->is(T_OPEN_ROUND)) {
-			return;
-		}
-		
-		$iCallEnd = $tokenStream->findComplementaryBracket($i);
-		
-		$iArrayAccess = $tokenStream->skipWhitespace($iCallEnd);
+		$iCallEnd = $tokenStream->skipWhitespace($i, true);
+        
+        // not a function call
+        if (!$tokenStream[$iCallEnd]->is(T_CLOSE_ROUND)) {
+            return;
+        }
 
 		// not an array access ("[")
-		if (!$tokenStream[$iArrayAccess]->is(T_OPEN_SQUARE)) {
+		if (!$tokenStream[$i]->is(T_OPEN_SQUARE)) {
 			return;
 		}
 		
-		$sArrayAccess = $tokenStream->extractStream($iArrayAccess, $tokenStream->findComplementaryBracket($iArrayAccess));
-		$sArrayAccess->extractStream(0, 0); // remove "["
-		$sArrayAccess->extractStream(count($sArrayAccess)-1, count($sArrayAccess)-1); // remove "]"
+		$sArrayAccess = $tokenStream->extract($i, $tokenStream->complementaryBracket($i));
+		$sArrayAccess->extract(0); // remove "["
+		$sArrayAccess->extract(count($sArrayAccess)-1); // remove "]"
 		
-		$sCall = $tokenStream->extractStream($iCallStart, $iCallEnd);
+		$sCall = $tokenStream->extract($iCallStart, $iCallEnd);
 		
 		// now insert prephp_rt_arrayAccess()
-		$tokenStream->insertStream($iCallStart,
-			array(
-				new Prephp_Token(
-					T_STRING,
-					'prephp_rt_arrayAccess'
-				),
-				'(',
-					$sCall,
-					',',
-					$sArrayAccess,
-				')',
-			)
-		);
+		$tokenStream->insert($iCallStart,
+            array(
+                new Prephp_Token(
+                    T_STRING,
+                    'prephp_rt_arrayAccess'
+                ),
+                '(',
+                    $sCall,
+                    ',',
+                    $sArrayAccess,
+                ')',
+            )
+        );
+        
+        return true;
 	}
 ?>

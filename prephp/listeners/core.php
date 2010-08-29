@@ -1,6 +1,6 @@
 <?php	
 	function prephp_LINE($token) {
-		return (string)$token->getLine();
+		return $token->line;
 	}
 	
 	function prephp_FILE($token) {
@@ -8,16 +8,16 @@
 	}
 	
 	function prephp_real_FILE($token) {
-		if ($token->getContent() == 'PREPHP__FILE__') {
+		if ($token->content == 'PREPHP__FILE__') {
 			return '__FILE__';
 		}
 		return false;
 	}
 	
 	function prephp_DIR($tokenStream, $i) {		
-		$tokenStream->extractStream($i, $i); // remove __DIR__
+		$tokenStream->extract($i); // remove __DIR__
 		
-		$tokenStream->insertStream($i,
+		$tokenStream->insert($i,
 			array(
 				new Prephp_Token(
 					T_STRING,
@@ -35,11 +35,9 @@
 	
 	function prephp_include($tokenStream, $i) {
 		$i = $tokenStream->skipWhitespace($i);
-		if ($tokenStream[$i]->is(T_OPEN_ROUND)) {
-			$i = $tokenStream[$i]->skipWhitespace($i);
-		}
+        $file = $tokenStream->extract($i, $tokenStream->findEOS($i) - 1);
 		
-		$tokenStream->insertStream($i,
+		$tokenStream->insert($i,
 			array(
 				new Prephp_Token(
 					T_STRING,
@@ -48,15 +46,12 @@
 				'(',
 					new Prephp_Token(
 						T_FILE,
-						'__FILE__',
-						$tokenStream[$i]->getLine()
+						'__FILE__'
 					),
 					',',
+                    $file,
+                ')',
 			)
-		);
-		
-		$tokenStream->insertToken($tokenStream->findEOS($i),
-				')'
 		);
 	}
 	
@@ -116,7 +111,7 @@
 			'unlink'              => array(1),
 		);
 		
-		$name = $tokenStream[$iFunction]->getContent();
+		$name = $tokenStream[$iFunction]->content;
 		
 		// not a filesystem related function
 		if (!isset($functions[$name])) {
@@ -125,16 +120,16 @@
 		
 		$iBracketOpen = $tokenStream->skipWhitespace($iFunction);
 		if ($iBracketOpen === false || !$tokenStream[$iBracketOpen]->is(T_OPEN_ROUND)) {
-			throw new Prephp_Exception('Core/preparePath: Function name isn\'t followed by \'(\'');
+			return;
 		}
 		
-		$iBracketClose = $tokenStream->findComplementaryBracket($iBracketOpen);
+		$iBracketClose = $tokenStream->complementaryBracket($iBracketOpen);
 		
 		$arg = 1;
 		$mode = T_COMMA;
-		for ($i = $iBracketOpen+1; $i <= $iBracketClose; ++$i) {
+		for ($i = $iBracketOpen + 1; $i <= $iBracketClose; ++$i) {
 			if ($mode == T_COMMA && in_array($arg, $functions[$name])) {
-				$tokenStream->insertStream($i, array(
+				$tokenStream->insert($i, array(
 					new Prephp_Token(
 						T_STRING,
 						'prephp_rt_preparePath'
@@ -147,11 +142,11 @@
 			}
 			
 			if ($tokenStream[$i]->is(array(T_OPEN_ROUND, T_OPEN_SQUARE, T_OPEN_CURLY))) {
-				$i = $tokenStream->findComplementaryBracket($i);
+				$i = $tokenStream->complementaryBracket($i);
 			}
 			elseif ($tokenStream[$i]->is(array(T_COMMA, T_CLOSE_ROUND))) {
 				if ($mode == T_STRING) {
-					$tokenStream->insertToken($i, ')');
+					$tokenStream->insert($i, ')');
 					$i += 1;
 					$iBracketClose += 1;
 					$mode = T_COMMA;

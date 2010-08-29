@@ -32,11 +32,6 @@
 		protected function registerListeners() {
 			$p = $this->preprocessor;
 			
-			$p->ensureToken('use', T_USE);
-			$p->ensureToken('namespace', T_NAMESPACE);
-			$p->ensureToken('__NAMESPACE__', T_NS_C);
-			$p->ensureToken('__DIR__', T_DIR);
-			
 			require_once 'listeners/core.php';
 			require_once 'listeners/arrayAccess.php';
 			require_once 'listeners/funcRetCall.php';
@@ -63,7 +58,7 @@
 				$p->registerStreamManipulator(array(T_FUNCTION, T_CONST), array('Prephp_Namespace', 'registerOther'));
 				
 				$p->registerStreamManipulator(array(T_STRING, T_NS_SEPARATOR), array('Prephp_Namespace', 'resolve'));
-				$p->registerTokenCompiler(T_NS_C, array('Prephp_Namespace', 'NS_C'));
+                $p->registerTokenCompiler(T_NS_C, array('Prephp_Namespace', 'NS_C'));
 			}
 			
 			// PHP Extenders
@@ -71,12 +66,11 @@
 			$p->registerStreamManipulator(array(T_STRING, T_VARIABLE, T_DOLLAR), 'prephp_funcRetCall');
 			
 			// Core
-			$p->registerTokenCompiler(T_LINE, 'prephp_LINE');
-			
 			$p->registerStreamManipulator(array(T_REQUIRE, T_INCLUDE, T_REQUIRE_ONCE, T_INCLUDE_ONCE), 'prephp_include');
 			$p->registerStreamManipulator(T_DIR, 'prephp_DIR');
 			$p->registerStreamManipulator(T_STRING, 'prephp_preparePath');
 			
+            $p->registerTokenCompiler(T_LINE, 'prephp_LINE');
 			$p->registerTokenCompiler(T_FILE, 'prephp_FILE');
 			$p->registerTokenCompiler(T_STRING, 'prephp_real_FILE');
 		}

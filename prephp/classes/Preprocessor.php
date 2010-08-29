@@ -4,17 +4,8 @@
 	class Prephp_Preprocessor
 	{
 		protected $sourcePreparators = array();
-		protected $ensureTokens = array();
 		protected $streamManipulators = array();
 		protected $tokenCompilers = array();
-		
-		// ensure that a token exists
-		// e.g. ensure that T_STRING(__NAMESPACE__) is converted to
-		// T_NS_C(__NAMESPACE__) do ensureToken('__NAMESPACE__', T_NS_C);
-		// works only for T_STRINGs
-		public function ensureToken($content, $tokenId) {
-			$ensureTokens[$content] = $tokenId;
-		}
 		
 		// sourcePreparators get the source passed as only argument
 		// and must return some source
@@ -59,53 +50,45 @@
 		
 		// this does the magic, preprocess my source!
 		public function preprocess($source) {
-			// prepare source (sourcePreparator)
+			set_time_limit(5); // timeout (debug)
+            
+            // prepare source (sourcePreparator)
 			foreach ($this->sourcePreparators as $preparator) {
 				$source = call_user_func($preparator, $source);
 			}
 			
 			// get token stream
-			$tokenStream = new Prephp_Token_Stream($source);
-			
-			// ensure tokens
-			$count = count($tokenStream);
-			for ($i = 0; $i < $count; ++$i) {
-				if ($tokenStream[$i]->is(T_STRING) && isset($this->ensureTokens[$tokenStream[$i]->getContent()])) {
-					$tokenStream[$i] = new Prephp_Token(
-						$this->ensureTokens[$tokenStream[$i]->getContent()],
-						$tokenStream[$i]->getContent(),
-						$tokenStream[$i]->getLine()
-					);
-				}
-			}
+			$tokenStream = new Prephp_TokenStream($source);
 			
 			// manipulate tokens
-			foreach ($this->streamManipulators as $manipulator) {
-				list($callback, $tokens) = $manipulator;
-				foreach ($tokenStream as $i=>$token) {
-					if ($token->is($tokens)) {
-						call_user_func($callback, $tokenStream, $i);
-					}
-				}
-			}
+            foreach ($tokenStream as $i => $token) {
+                do {
+                    $loop = false;
+                    foreach ($this->streamManipulators as $manipulator) {
+                        list ($callback, $tokens) = $manipulator;
+                        if ($tokenStream[$i]->is($tokens)) {
+                            if (true === call_user_func($callback, $tokenStream, $i)) {
+                                $loop = true;
+                            }
+                        }
+                    }
+                }
+                while ($loop);
+            }
 			
 			// compile source
 			$source = '';
 			foreach ($tokenStream as $token) {
-				if (isset($this->tokenCompilers[$token->getTokenId()])) {
-					foreach ($this->tokenCompilers[$token->getTokenId()] as $compiler) {
-						$ret = call_user_func($compiler, $token);
+				if (isset($this->tokenCompilers[$token->type])) {
+					foreach ($this->tokenCompilers[$token->type] as $compiler) {
+						$ret = $compiler($token);
 						if ($ret !== false) {
-							$token = new Prephp_Token(
-								$token->getTokenId(),
-								$ret,
-								$token->getLine()
-							);
+                            $token->content = $ret;
 						}
 					}
 				}
 				
-				$source .= $token->getContent();
+				$source .= $token->content;
 			}
 			
 			return $source;

@@ -29,8 +29,8 @@
 	}
 	
 	// func()[n] to prephp_functionArrayAccess(func(), n)
-	function prephp_rt_arrayAccess($array, $access) {
-		return $array[$access];
+	function prephp_rt_arrayAccess($array, $index) {
+		return $array[$index];
 	}
 	
 	// NS runtime function resolver

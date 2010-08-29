@@ -9,14 +9,16 @@
 			++$dollarClass;
 		}
 		
+        // not a dynmaic scope resolution
 		if (!$tokenStream[$i]->is(T_VARIABLE)) {
-			return; // not a variable (syntax error, actually)
+			return;
 		}
 		
 		$tClass = $tokenStream[$i];
 		
+        // not a scope resolution
 		if (!$tokenStream[$i = $tokenStream->skipWhitespace($i)]->is(T_PAAMAYIM_NEKUDOTAYIM)) {
-			return; // not scope resolution call
+			return;
 		}
 		
 		$i = $tokenStream->skipWhitespace($i);
@@ -27,7 +29,8 @@
 			++$dollarMain;
 		}
 		
-		if (!$tokenStream[$i]->is(array(T_STRING, T_VARIABLE))) {
+        // unsupported syntax (something like ${})
+		if (!$tokenStream[$i]->is(T_STRING, T_VARIABLE)) {
 			return;
 		}
 		
@@ -37,26 +40,26 @@
 			$type = 'm'; // method
 		}
 		else {
-			$type = $tokenStream[$iMain]->is(T_STRING)?'c':'p'; // constant or property
+			$type = $tokenStream[$iMain]->is(T_STRING) ? 'c' : 'p'; // constant or property
 		}
 		
 		switch ($type) {
 			case 'c': // constant
-				$const = $tokenStream[$iMain]->getContent();
+				$constName = $tokenStream[$iMain]->content;
 				
-				$tokenStream->extractStream($iStart, $iMain); // remove
-				$tokenStream->insertStream($iStart, array(
+				$tokenStream->extract($iStart, $iMain); // remove
+				$tokenStream->insert($iStart, array(
 					new Prephp_Token(
 						T_STRING,
 						'constant'
 					),
 					'(',
-						$dollarClass?array_fill(0, $dollarClass, '$'):null,
+						$dollarClass ? array_fill(0, $dollarClass, '$') : null,
 						$tClass,
 						'.',
 						new Prephp_Token(
 							T_CONSTANT_ENCAPSED_STRING,
-							'\'::'.$const.'\''
+							"'::" . $constName . "'"
 						),
 					')',
 				));
@@ -66,16 +69,16 @@
 				if ($tMethod->is(T_STRING)) {
 					$tMethod = new Prephp_Token(
 						T_CONSTANT_ENCAPSED_STRING,
-						'\''.$tMethod->getContent().'\''
+						"'" . $tMethod->content . "'"
 					);
 				}
 				
-				$sArgumentList = $tokenStream->extractStream($i, $tokenStream->findComplementaryBracket($i));
-				$sArgumentList->extractStream(0, 0); // remove (
-				$sArgumentList->extractStream(count($sArgumentList)-1, count($sArgumentList)-1); // remove )
+				$sArgumentList = $tokenStream->extract($i, $tokenStream->complementaryBracket($i));
+				$sArgumentList->extract(0); // remove (
+				$sArgumentList->extract(count($sArgumentList)-1); // remove )
 				
-				$tokenStream->extractStream($iStart, $iMain);
-				$tokenStream->insertStream($iStart, array(
+				$tokenStream->extract($iStart, $iMain);
+				$tokenStream->insert($iStart, array(
 					new Prephp_Token(
 						T_STRING,
 						'call_user_func'
@@ -86,36 +89,43 @@
 							'array'
 						),
 						'(',
-							$dollarClass?array_fill(0, $dollarClass, '$'):null,
+							$dollarClass ? array_fill(0, $dollarClass, '$') : null,
 							$tClass,
 							',',
-							$tMethod->is(T_VARIABLE)&&$dollarMain?array_fill(0, $dollarMain, '$'):null,
+							$tMethod->is(T_VARIABLE) && $dollarMain ? array_fill(0, $dollarMain, '$') : null,
 							$tMethod,
 						')',
-						count($sArgumentList)?',':null,
+						count($sArgumentList) ? ',' : null,
 						$sArgumentList,
 					')'
 				));
 				break;
 			case 'p':
-				$tProperty = $tokenStream[$iMain];
-				$property = substr($tProperty->getContent(), 1);
+                if ($dollarMain) {
+                    $aProperty = array(
+                        $dollarMain - 1 > 0 ? array_fill(0, $dollarMain - 1, '$') : null,
+						$tokenStream[$iMain]
+                    );
+                }
+                else {
+                    $aProperty = new Prephp_Token( // should be $tProperty, but use a here for simplicity
+                        T_CONSTANT_ENCAPSED_STRING,
+                        "'" . substr($tokenStream[$iMain]->content, 1) . "'"
+                    );
+                }
 				
-				$tokenStream->extractStream($iStart, $iMain);
-				$tokenStream->insertStream($iStart, array(
+				$tokenStream->extract($iStart, $iMain);
+				$tokenStream->insert($iStart, array(
 					'(', // encapsulate everything in brackets
 						new Prephp_Token(
 							T_STRING,
-							'property_exists'
+							'property_exists' // checks visibility too in PHP < 5.3, so okay here
 						),
 						'(',
-							$dollarClass?array_fill(0, $dollarClass, '$'):null,
+							$dollarClass ? array_fill(0, $dollarClass, '$') : null,
 							$tClass,
 							',',
-							new Prephp_Token(
-								T_CONSTANT_ENCAPSED_STRING,
-								'\''.$property.'\''
-							),
+							$aProperty,
 						')',
 						'?',
 							new Prephp_Token(
@@ -125,35 +135,22 @@
 							'(',
 								new Prephp_Token(
 									T_CONSTANT_ENCAPSED_STRING,
-									'\'return \''
+									"'return '"
 								),
 								'.',
-								$dollarClass?array_fill(0, $dollarClass, '$'):null,
+								$dollarClass ? array_fill(0, $dollarClass, '$') : null,
 								$tClass,
 								'.',
 								new Prephp_Token(
 									T_CONSTANT_ENCAPSED_STRING,
-									'\'::$\''
+									"'::$'"
 								),
 								'.',
-								// depending on whether there are $dollarMains
-								$dollarMain
-									// either insert the dollarMains and the original T_VARIABLE
-									?
-										array(
-											array_fill(0, $dollarMain, '$'),
-											$tProperty
-										)
-									// or a string containing the property name
-									:
-										new Prephp_Token(
-											T_CONSTANT_ENCAPSED_STRING,
-											'\''.$property.'\''
-										),
+								$aProperty,
 								'.',
 								new Prephp_Token(
 									T_CONSTANT_ENCAPSED_STRING,
-									'\';\''
+									"';'"
 								),
 							')',
 						':',

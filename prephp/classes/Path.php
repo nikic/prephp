@@ -5,14 +5,11 @@
 	
 	class Prephp_Path
 	{
-		private static $slash;
-		private static $antiSlash;
+		private static $antiSlash = array('/' => '\\', '\\' => '/');
 		private static $win;
 		
 		// initializes slashes and OS
 		public static function init() {
-			self::$slash = DIRECTORY_SEPARATOR;
-			self::$antiSlash = self::$slash=='/'?'\\':'/';
 			self::$win = PHP_OS == 'WINNT' || PHP_OS == 'WIN32';
 		}
 		
@@ -45,13 +42,13 @@
 				
 				foreach ($include_paths as $path) {
 					try {
-						$paths[] = self::normalize($path . self::$slash . $filename, $executer);
+						$paths[] = self::normalize($path . DIRECTORY_SEPARATOR . $filename, $executer);
 					}
 					catch(InvalidArgumentException $e) {}
 				}
 			}
 			
-			$paths[] = self::normalize($caller . self::$slash . $filename);
+			$paths[] = self::normalize($caller . DIRECTORY_SEPARATOR . $filename);
 			
 			return $paths;
 		}
@@ -75,11 +72,10 @@
 					throw new InvalidArgumentException('cwd is not absolute, not a stream wrapper or not specified!');
 				}
 				
-				$filename = $cwd . self::$slash . $filename;
+				$filename = $cwd . DIRECTORY_SEPARATOR . $filename;
 			}
 			
-			$parts = explode(self::$slash, $filename);
-			$count = count($parts);
+			$parts = explode(DIRECTORY_SEPARATOR, $filename);
 			
 			$filename = array_shift($parts);
 			while ($part = array_shift($parts)) {
@@ -91,7 +87,7 @@
 					$filename = dirname($filename);
 				}
 				else {
-					$filename .= self::$slash . $part;
+					$filename .= DIRECTORY_SEPARATOR . $part;
 				}
 			}
 			
@@ -102,34 +98,30 @@
 		// normalizes slashes to self::$slash
 		// filename: must be non-wrapper
 		public static function normalizeSlashes($filename) {
-			return str_replace(self::$antiSlash, self::$slash, $filename);
+			return strtr($filename, self::$antiSlash[DIRECTORY_SEPARATOR], DIRECTORY_SEPARATOR);
 		}
 		
 		// removes double slashes
 		// filename: must be slash-normalized non-wrapper
 		public static function stripDoubleSlashes($filename) {
 			return (self::isUNC($filename)?'\\':'') // do not strip \\ at beginning (UNC path)
-					. preg_replace('#'.preg_quote(self::$slash).'{2,}#', self::$slash, $filename);
+					. preg_replace('#'.preg_quote(DIRECTORY_SEPARATOR).'{2,}#', DIRECTORY_SEPARATOR, $filename);
 		}
 		
 		// checks if is relative path: (./ and ../)
 		// filename: must be slash-normalized
 		public static function isRelative($filename) {
-			$l = strlen($filename);
-			
 			return
-				$l > 1 // minimum two chars, to be relative
-				&& $filename[0] == '.' && (self::isSlash($filename[1]) || ($l > 2 && $filename[1] == '.' && self::isSlash($filename[2])));
+				isset($filename[1]) // minimum two chars, to be relative
+				&& $filename[0] == '.' && (self::isSlash($filename[1]) || (isset($filename[2]) && $filename[1] == '.' && self::isSlash($filename[2])));
 		}
 		
 		// checks if is absolute path (X: and UNC for win, / otherwise)
 		// filename: must be slash-normalized
 		public static function isAbsolute($filename) {
-			$l = strlen($filename);
-			
 			// Windows
 			if (self::$win) {
-				return $l > 1 // minimum of two chars
+				return isset($filename[1]) // minimum two chars
 				&& (
 					(self::isSlash($filename[0]) && self::isSlash($filename[1])) // UNC path
 					|| (ctype_alpha($filename[0]) && $filename[1] == ':') // X: path
@@ -137,13 +129,13 @@
 			}
 			
 			// Unix
-			return $l && self::isSlash($filename[0]);
+			return isset($filename[0]) && self::isSlash($filename[0]);
 		}
 		
 		// check if is UNC-path (win only)
 		// filename: must be slash-normalized
 		public static function isUNC($filename) {
-			return self::$win && strlen($filename) > 1 && self::isSlash($filename[0]) && self::isSlash($filename[1]);
+			return self::$win && isset($filename[1]) && self::isSlash($filename[0]) && self::isSlash($filename[1]);
 		}
 		
 		// checks if is stream wrapper
@@ -156,7 +148,7 @@
 		// checks if $char is self::$slash
 		// char: must be slash-normalized
 		private static function isSlash($char) {
-			return $char == self::$slash;
+			return $char == DIRECTORY_SEPARATOR;
 		}
 	}
 	

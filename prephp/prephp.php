@@ -8,7 +8,7 @@
 	
 	class Prephp_Core extends Prephp_Core_Abstract
 	{
-		
+		//const sourceDir = '../../simpsonsonline/a';
 	}
 	
 	require_once './functions.php';

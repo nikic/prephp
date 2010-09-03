@@ -20,4 +20,10 @@
 		
 		strlen('');            // call_user_func(prephp_rt_checkFunction('Foo__N__Bar__N__strlen','strlen'),'');
 	}                          // }
+    
+    spl_autoload_register(function ($class) {
+        echo $class;
+    });
+    
+    spl_autoload_call('Some__N__Strange__N__Class__N__Name');
 ?>

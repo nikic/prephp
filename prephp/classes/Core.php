@@ -32,10 +32,6 @@
 		protected function registerListeners() {
 			$p = $this->preprocessor;
 			
-			require_once 'listeners/core.php';
-			require_once 'listeners/arrayAccess.php';
-			require_once 'listeners/funcRetCall.php';
-			
 			// PHP 5.3 simulators
 			if (version_compare(PHP_VERSION, '5.3', '<')) {
 				require_once 'listeners/lambda.php';
@@ -60,9 +56,18 @@
 				$p->registerStreamManipulator(array(T_STRING, T_NS_SEPARATOR), array('Prephp_Namespace', 'resolve'));
                 $p->registerTokenCompiler(T_NS_C, array('Prephp_Namespace', 'NS_C'));
 			}
+            
+            // PHP 5.4 simulators
+            if (version_compare(PHP_VERSION, '5.4', '<')) {
+                require_once 'listeners/arrayAccess.php';
+                
+                $p->registerStreamManipulator(array(T_STRING, T_VARIABLE, T_DOLLAR), 'prephp_arrayAccess');
+            }
+            
+            require_once 'listeners/core.php';
+			require_once 'listeners/funcRetCall.php';
 			
 			// PHP Extenders
-			$p->registerStreamManipulator(array(T_STRING, T_VARIABLE, T_DOLLAR), 'prephp_arrayAccess');
 			$p->registerStreamManipulator(array(T_STRING, T_VARIABLE, T_DOLLAR), 'prephp_funcRetCall');
 			
 			// Core
@@ -75,7 +80,7 @@
 			$p->registerTokenCompiler(T_STRING, 'prephp_real_FILE');
 		}
 		
-		public function http_404($accessPath) {
+		public function notFound($accessPath) {
 			header('HTTP/1.1 404 Not Found');
 			
 			echo 'The file you accessed (', htmlspecialchars($accessPath),') does not exist in the specified source directory.';
@@ -103,8 +108,7 @@
 		// get preprocessor
 		public function getPreprocessor() {
 			if ($this->preprocessor === null) {
-				require_once 'Preprocessor.php'; // load preprocessor only when necessary
-				
+				require_once 'Preprocessor.php';
 				$this->preprocessor = new Prephp_Preprocessor();
 				
 				$this->registerListeners();
@@ -118,7 +122,7 @@
 			$sourcePath = $this->accessToSource($accessPath);
 			
 			if (false === $sourcePath || false === $cachePath = $this->process($sourcePath)) {
-				$this->http_404($accessPath);
+				$this->notFound($accessPath);
 				die();
 			}
 			
@@ -152,7 +156,7 @@
 			$this->current = $sourcePath;
 			
 			if (false === $source = file_get_contents($sourcePath)) {
-				throw new Prephp_Exception('Could not file_get_contents '.$sourcePath);
+				throw new Prephp_Exception('Could not file_get_contents ' . $sourcePath);
 			}
 			
 			$source = $this->getPreprocessor()->preprocess($source);
@@ -162,7 +166,7 @@
 			}
 			
 			if (false === file_put_contents($cachePath, $source)) {
-				throw new Prephp_Exception('Couldn\'t file_put_contents to '.$cachePath);
+				throw new Prephp_Exception('Could not file_put_contents to ' . $cachePath);
 			}
 		}
 		

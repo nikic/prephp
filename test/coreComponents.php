@@ -13,15 +13,15 @@ INCLUDED: D:\xampp\htdocs\prephp\test\coreComponents_include.php
 <hr />
 Output:
 <?php
-	echo "\n" . 'You are currently looking at line: ' . __LINE__;
-	
-	echo "\n" . 'This is FILE: ' . __FILE__;
-	
-	echo "\n" . 'This is the real file location: ' . PREPHP__FILE__;
-	
-	echo "\n" . 'This is DIR: ' . __DIR__;
-	
-	echo "\n" . 'This is an included (require_once) file:' . "\n";
-	
-	require_once 'coreComponents_include.php';
+    echo "\n" . 'You are currently looking at line: ' . __LINE__;
+    
+    echo "\n" . 'This is FILE: ' . __FILE__;
+    
+    echo "\n" . 'This is the real file location: ' . PREPHP__FILE__;
+    
+    echo "\n" . 'This is DIR: ' . __DIR__;
+    
+    echo "\n" . 'This is an included (require_once) file:' . "\n";
+    
+    require_once 'coreComponents_include.php';
 ?>

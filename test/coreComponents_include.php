@@ -1,3 +1,3 @@
 <?php
-	echo "\nINCLUDED: " . __FILE__;
+    echo "\nINCLUDED: " . __FILE__;
 ?>

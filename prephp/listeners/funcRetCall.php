@@ -1,8 +1,8 @@
 <?php
-	function prephp_funcRetCall($tokenStream, $iFirstFuncStart) {
-		$i = $iFirstFuncStart;
+    function prephp_funcRetCall($tokenStream, $iFirstFuncStart) {
+        $i = $iFirstFuncStart;
         
-		do {
+        do {
             if ($tokenStream[$i]->is(T_DOLLAR)) {
                 $i = $tokenStream->skip($i, T_DOLLAR);
                 
@@ -30,33 +30,33 @@
         if (!$tokenStream[$iFirstFuncEnd]->is(T_CLOSE_ROUND)) {
             return;
         }
-		
+        
         // not a function return value call
-		if (!$tokenStream[$i]->is(T_OPEN_ROUND)) {
-			return;
-		}
-		
-		$sSecondFunc = $tokenStream->extract($i, $tokenStream->complementaryBracket($i));
-		$sFirstFunc  = $tokenStream->extract($iFirstFuncStart, $iFirstFuncEnd);
-		
-		$sSecondFunc->extract(0); // remove (
-		$sSecondFunc->extract(count($sSecondFunc)-1); // remove )
-		
-		// now, insert call_user_func
-		$tokenStream->insert($iFirstFuncStart,
-			array(
-				new Prephp_Token(
-					T_STRING,
-					'call_user_func'
-				),
-				'(',
-					$sFirstFunc,
-					count($sSecondFunc)!=0 ? ',' : null,
-					$sSecondFunc,
-				')',
-			)
-		);
+        if (!$tokenStream[$i]->is(T_OPEN_ROUND)) {
+            return;
+        }
+        
+        $sSecondFunc = $tokenStream->extract($i, $tokenStream->complementaryBracket($i));
+        $sFirstFunc  = $tokenStream->extract($iFirstFuncStart, $iFirstFuncEnd);
+        
+        $sSecondFunc->extract(0); // remove (
+        $sSecondFunc->extract(count($sSecondFunc)-1); // remove )
+        
+        // now, insert call_user_func
+        $tokenStream->insert($iFirstFuncStart,
+            array(
+                new Prephp_Token(
+                    T_STRING,
+                    'call_user_func'
+                ),
+                '(',
+                    $sFirstFunc,
+                    count($sSecondFunc)!=0 ? ',' : null,
+                    $sSecondFunc,
+                ')',
+            )
+        );
         
         return true;
-	}
+    }
 ?>

@@ -1,8 +1,8 @@
 RewriteEngine on
 Options +FollowSymLinks
 
-# any exclude should be made here
-RewriteCond %{REQUEST_URI} !prephp/prephp/
+#disallow access to cache and to prephp files
+RewriteRule ^cache/ - [F]
 
 # prephp gets the variables
 # prefixed with prephp_

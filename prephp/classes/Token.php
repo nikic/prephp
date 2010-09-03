@@ -182,9 +182,9 @@
         *                       may be passed directly using ->is(type, type, type, ...)
         * @return bool
         */
-        public function is($type) {
+        public function is($type, $more = null) {
             return $type === $this->type
-                   || (func_num_args() == 1 && is_array($type) && in_array($this->type, $type))
-                   || (func_num_args() > 1 && ($args = func_get_args()) && in_array($this->type, $args));
+                   || (!isset($more) && is_array($type) && in_array($this->type, $type))
+                   || (isset($more)  && ($args = func_get_args()) && in_array($this->type, $args));
         }
     }

@@ -251,11 +251,6 @@
                 $ns .= $tokenStream[$i]->content;
             }
             
-            // type hint / catch
-            if ($tokenStream[$i]->is(T_VARIABLE) || $tokenStream[$i + 1]->is(T_VARIABLE)) {
-                return;
-            }
-            
             $tokenStream->extract($iStart, $i - 1); // we went one too far
             
             $current = self::$ns;
@@ -279,8 +274,8 @@
                 // check that is class and then apply class alias if exists
                 if (isset(self::$use[$ns])
                     && ($tokenStream[$tokenStream->skipWhitespace($iStart, true)]->is(T_NEW)
-                    || $tokenStream[$iStart]->is(T_PAAMAYIM_NEKUDOTAYIM)
-                    || $tokenStream[$iStart + 1]->is(T_PAAMAYIM_NEKUDOTAYIM)
+                    || $tokenStream[$iStart]->is(T_PAAMAYIM_NEKUDOTAYIM, T_VARIABLE)
+                    || $tokenStream[$iStart + 1]->is(T_PAAMAYIM_NEKUDOTAYIM, T_VARIABLE)
                     )
                 ) {
                     $ns = self::$use[$ns];
@@ -340,8 +335,8 @@
                 }
                 
                 // determine whether we are dealing with a class, function or const lookup
-                if ($tokenStream[$iStart]->is(T_PAAMAYIM_NEKUDOTAYIM)
-                    || $tokenStream[$tokenStream->skipWhitespace($iStart)]->is(T_PAAMAYIM_NEKUDOTAYIM)) {
+                if ($tokenStream[$iStart]->is(T_PAAMAYIM_NEKUDOTAYIM, T_VARIABLE)
+                    || $tokenStream[$tokenStream->skipWhitespace($iStart)]->is(T_PAAMAYIM_NEKUDOTAYIM, T_VARIABLE)) {
                     $type = T_CLASS;
                 }
                 elseif ($tokenStream[$iStart]->is(T_OPEN_ROUND)

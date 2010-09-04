@@ -33,7 +33,7 @@
             $p = $this->preprocessor;
             
             // PHP 5.3 simulators
-            //if (version_compare(PHP_VERSION, '5.3', '<')) {
+            if (version_compare(PHP_VERSION, '5.3', '<')) {
                 require_once 'listeners/lambda.php';
                 require_once 'listeners/const.php';
                 require_once 'listeners/varClassStatic.php';
@@ -53,12 +53,12 @@
                 $p->registerStreamManipulator(T_NAMESPACE, array('Prephp_Namespace', 'NS'));
                 $p->registerStreamManipulator(T_USE, array('Prephp_Namespace', 'alias'));
                 
-                $p->registerStreamManipulator(T_CLASS, array('Prephp_Namespace', 'registerClass'));
+                $p->registerStreamManipulator(array(T_CLASS, T_INTERFACE), array('Prephp_Namespace', 'registerClass'));
                 $p->registerStreamManipulator(array(T_FUNCTION, T_CONST), array('Prephp_Namespace', 'registerOther'));
                 
                 $p->registerStreamManipulator(array(T_STRING, T_NS_SEPARATOR), array('Prephp_Namespace', 'resolve'));
                 $p->registerTokenCompiler(T_NS_C, array('Prephp_Namespace', 'NS_C'));
-            //}
+            }
             
             // PHP 5.4 simulators
             if (version_compare(PHP_VERSION, '5.4', '<')) {
@@ -75,18 +75,18 @@
             
             // Core
             $p->registerStreamManipulator(array(T_REQUIRE, T_INCLUDE, T_REQUIRE_ONCE, T_INCLUDE_ONCE), 'prephp_include');
-            $p->registerStreamManipulator(T_DIR, 'prephp_DIR');
             $p->registerStreamManipulator(T_STRING, 'prephp_preparePath');
             
             $p->registerTokenCompiler(T_LINE, 'prephp_LINE');
             $p->registerTokenCompiler(T_FILE, 'prephp_FILE');
+            $p->registerTokenCompiler(T_DIR,  'prephp_DIR');
             $p->registerTokenCompiler(T_STRING, 'prephp_real_FILE');
         }
         
         public function notFound($accessPath) {
             header('HTTP/1.1 404 Not Found');
             
-            echo 'The file you accessed (', htmlspecialchars($accessPath),') does not exist in the specified source directory.';
+            echo 'The file you accessed (', htmlspecialchars($accessPath), ') does not exist in the specified source directory.';
         }
         
         //
@@ -103,8 +103,12 @@
                 throw new Prephp_Exception('sourceDir not readable');
             }
             
-            if (!is_writeable(Prephp_Core::cacheDir) && !mkdir(Prephp_Core::cacheDir, 0777, true)) {
-                throw new Prephp_Exception('cacheDir not writeable and not createable');
+            if (!file_exists(Prephp_Core::cacheDir) && !mkdir(Prephp_Core::cacheDir, 0777, true)) {
+                throw new Prephp_Exception('cacheDir could not be created');
+            }
+            
+            if (!is_writeable(Prephp_Core::cacheDir) && !chmod(Prephp_Core::cacheDir, 0777)) {
+                throw new Prephp_Exception('could not obtain chmod 777 on cacheDir');
             }
         }
         
@@ -177,7 +181,8 @@
             return realpath(Prephp_Core::sourceDir . DIRECTORY_SEPARATOR . $accessPath);
         }
         public function sourceToCache($sourcePath) {
-            return str_replace(realpath(Prephp_Core::sourceDir), realpath(Prephp_Core::cacheDir), $sourcePath);
+            $hash = md5(dirname($sourcePath));
+            return realpath(Prephp_Core::cacheDir) . DIRECTORY_SEPARATOR . $hash . DIRECTORY_SEPARATOR . basename($sourcePath);
         }
         
         public function getExecuter() {

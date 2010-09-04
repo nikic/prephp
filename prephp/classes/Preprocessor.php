@@ -50,8 +50,6 @@
         
         // this does the magic, preprocess my source!
         public function preprocess($source) {
-            set_time_limit(5); // timeout (debug)
-            
             // prepare source (sourcePreparator)
             foreach ($this->sourcePreparators as $preparator) {
                 $source = call_user_func($preparator, $source);
@@ -62,6 +60,8 @@
             
             // manipulate tokens
             foreach ($tokenStream as $i => $token) {
+                set_time_limit(3); // timeout (debug)
+                
                 do {
                     $loop = false;
                     foreach ($this->streamManipulators as $manipulator) {

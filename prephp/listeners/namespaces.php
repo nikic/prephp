@@ -207,7 +207,7 @@
         // resolves non-variable namespace calls
         public static function resolve($tokenStream, $iStart) {
             // ensure it's not a definition and not a scope resolution or object access
-            if ($tokenStream[$tokenStream->skipWhitespace($iStart, true)]->is(T_CLASS, T_FUNCTION, T_CONST, T_PAAMAYIM_NEKUDOTAYIM, T_OBJECT_OPERATOR)) {
+            if ($tokenStream[$tokenStream->skipWhitespace($iStart, true)]->is(T_CLASS, T_INTERFACE, T_FUNCTION, T_CONST, T_PAAMAYIM_NEKUDOTAYIM, T_OBJECT_OPERATOR)) {
                 return; // in defintion
             }
             
@@ -220,12 +220,9 @@
             if ($tokenStream[$tokenStream->skipWhitespace($iStart)]->is(T_OPEN_ROUND)) {
                 // these functions are under prephp's protection
                 if (in_array($tokenStream[$iStart]->content, array(
-                    'call_user_func',
                     'prephp_rt_prepareInclude',
                     'prephp_rt_preparePath',
                     'prephp_rt_arrayAccess',
-                    'prephp_rt_checkFunction',
-                    'prephp_rt_checkConstant',
                 ))) {
                     return;
                 }
@@ -251,7 +248,8 @@
                 $ns .= $tokenStream[$i]->content;
             }
             
-            $tokenStream->extract($iStart, $i - 1); // we went one too far
+            $i = $tokenStream->skipWhitespace($i, true); // went too far
+            $tokenStream->extract($iStart, $i);
             
             $current = self::$ns;
             
@@ -273,10 +271,10 @@
             else {
                 // check that is class and then apply class alias if exists
                 if (isset(self::$use[$ns])
-                    && ($tokenStream[$tokenStream->skipWhitespace($iStart, true)]->is(T_NEW)
+                    && ($tokenStream[$tokenStream->skipWhitespace($iStart, true)]->is(T_NEW, T_EXTENDS, T_IMPLEMENTS, T_INSTANCEOF)
                     || $tokenStream[$iStart]->is(T_PAAMAYIM_NEKUDOTAYIM, T_VARIABLE)
-                    || $tokenStream[$iStart + 1]->is(T_PAAMAYIM_NEKUDOTAYIM, T_VARIABLE)
-                    )
+                    || ($tokenStream[$iStart]->is(T_WHITESPACE)
+                        && $tokenStream[$iStart + 1]->is(T_PAAMAYIM_NEKUDOTAYIM, T_VARIABLE)))
                 ) {
                     $ns = self::$use[$ns];
                 }
@@ -334,52 +332,77 @@
                     return;
                 }
                 
-                // determine whether we are dealing with a class, function or const lookup
-                if ($tokenStream[$iStart]->is(T_PAAMAYIM_NEKUDOTAYIM, T_VARIABLE)
-                    || $tokenStream[$tokenStream->skipWhitespace($iStart)]->is(T_PAAMAYIM_NEKUDOTAYIM, T_VARIABLE)) {
-                    $type = T_CLASS;
-                }
-                elseif ($tokenStream[$iStart]->is(T_OPEN_ROUND)
-                    || $tokenStream[$tokenStream->skipWhitespace($iStart)]->is(T_OPEN_ROUND)) {
-                    if ($tokenStream[$tokenStream->skipWhitespace($iStart, true)]->is(T_NEW)) {
-                        $type = T_CLASS;
-                    }
-                    else {
-                        $type = T_FUNCTION;
-                    }
-                }
-                else {
-                    $type = T_CONST;
-                }
-                
-                if ($type == T_CLASS) {
+                // class
+                if ($tokenStream[$tokenStream->skipWhitespace($iStart, true)]->is(T_NEW, T_EXTENDS, T_IMPLEMENTS, T_INSTANCEOF)
+                    || $tokenStream[$iStart]->is(T_PAAMAYIM_NEKUDOTAYIM, T_VARIABLE)
+                    || ($tokenStream[$iStart]->is(T_WHITESPACE)
+                        && $tokenStream[$iStart + 1]->is(T_PAAMAYIM_NEKUDOTAYIM, T_VARIABLE))
+                ) {
                     $tokenStream->insert($iStart,
                         new Prephp_Token(
                             T_STRING,
-                            str_replace('\\', self::SEPARATOR, ($current == '' ? '' : $current . '\\') . $ns)
+                            str_replace('\\', self::SEPARATOR, ($current == '' || $ns == 'self' || $ns == 'parent' ? '' : $current . '\\') . $ns)
                         )
                     );
                 }
+                // function or constant
                 else {
-                    $tokenStream->insert($iStart,
-                        array(
+                    $isFunction = $tokenStream[$iStart]->is(T_OPEN_ROUND);
+                    
+                    $tVariable = new Prephp_Token(
+                        T_VARIABLE,
+                        uniqid('$prephp_var_')
+                    );
+                    
+                    if ($isFunction) {
+                        $tokenStream->insert($iStart, $tVariable);
+                    }
+                    else {
+                        $tokenStream->insert($iStart, array(
                             new Prephp_Token(
                                 T_STRING,
-                                'prephp_rt_check' . ($type == T_FUNCTION ? 'Function' : 'Constant')
+                                'constant'
                             ),
                             '(',
+                                $tVariable,
+                            ')',
+                        ));
+                    }
+                    
+                    $tokenStream->insert($tokenStream->findEOS($iStart, true) + 1, array(
+                        new Prephp_Token(
+                            T_WHITESPACE,
+                            "\n"
+                        ),
+                        new Prephp_Token(
+                            T_IF,
+                            'if'
+                        ),
+                        '(',
+                            '!',
+                            new Prephp_Token(
+                                T_STRING,
+                                $isFunction ? 'function_exists' : 'defined'
+                            ),
+                            '(',
+                                $tVariable,
+                                '=',
                                 new Prephp_Token(
                                     T_CONSTANT_ENCAPSED_STRING,
                                     "'" . str_replace('\\', self::SEPARATOR, ($current == '' ? '' : $current . '\\') . $ns) . "'"
                                 ),
-                                ',',
-                                new Prephp_Token(
-                                    T_CONSTANT_ENCAPSED_STRING,
-                                    "'" . str_replace('\\', self::SEPARATOR, $ns) . "'"
-                                ),
                             ')',
-                        )
-                    );
+                        ')',
+                        '{',
+                            $tVariable,
+                            '=',
+                            new Prephp_Token(
+                                T_CONSTANT_ENCAPSED_STRING,
+                                "'" . $ns . "'"
+                            ),
+                            ';',
+                        '}',
+                    ));
                 }
             }
         }

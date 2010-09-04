@@ -14,7 +14,7 @@
             }
 
             // no class before { => not in class
-            if (false === $iLastClass = $tokenStream->find($iLastOpen, T_CLASS, true)) {
+            if (false === $iLastClass = $tokenStream->find($iLastOpen, array(T_CLASS, T_INTERFACE), true)) {
                 break;
             }
             

@@ -30,10 +30,13 @@
         
         // function definition stream
         $sDefinition = $tokenStream->extract($iDefinition, $tokenStream->complementaryBracket($iDefinition));
+        $sDefinition->extract(0); // remove {
+        $sDefinition->extract(count($sDefinition) - 1); // remove }
+        
         // function top (arguments and use() definition)
         $sTop = $tokenStream->extract($iFunction, $iDefinition - 1);
         
-        $funcName = 'prephp_lambda_'.md5(mt_rand());
+        $funcName = uniqid('prephp_lambda_');
         
         // insert lambda function name as string as replacement for the function
         $tokenStream->insert($iFunction,
@@ -94,7 +97,7 @@
                 '[',
                     new Prephp_Token(
                         T_CONSTANT_ENCAPSED_STRING,
-                        '\''.$funcName.'\''
+                        "'" . $funcName . "'"
                     ),
                 ']',
                 '=',
@@ -109,16 +112,16 @@
                 array_push($aRegisterGlobals,
                     new Prephp_Token(
                         T_CONSTANT_ENCAPSED_STRING,
-                        '\''.$u[0].'\''
+                        "'" . $u[0] . "'"
                     ),
                     new Prephp_Token(
                         T_DOUBLE_ARROW,
                         '=>'
                     ),
-                    $u[1]?'&':null, // insert & if is ref
+                    $u[1] ? '&' : null, // insert & if is ref
                     new Prephp_Token(
                         T_VARIABLE,
-                        '$'.$u[0]
+                        '$' . $u[0]
                     ),
                     ','
                 );
@@ -153,7 +156,7 @@
                         '$'.$u[0]
                     ),
                     '=',
-                    $u[1]?'&':null, // insert & if isRef
+                    $u[1] ? '&' : null, // insert & if isRef
                     new Prephp_Token(
                         T_VARIABLE,
                         '$GLOBALS'
@@ -161,13 +164,13 @@
                     '[',
                         new Prephp_Token(
                             T_CONSTANT_ENCAPSED_STRING,
-                            '\''.$funcName.'\''
+                            "'" . $funcName . "'"
                         ),
                     ']',
                     '[',
                         new Prephp_Token(
                             T_CONSTANT_ENCAPSED_STRING,
-                            '\''.$u[0].'\''
+                            "'" . $u[0] . "'"
                         ),
                     ']',
                     ';',
@@ -195,7 +198,7 @@
                     $funcName
                 ),
                 $sArguments,
-                '{', // These { } are redundant, but we use them for simplicity
+                '{',
                     $aRedeclareVars,
                     $sDefinition,
                 '}',

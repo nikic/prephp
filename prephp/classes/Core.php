@@ -33,16 +33,19 @@
             $p = $this->preprocessor;
             
             // PHP 5.3 simulators
-            if (version_compare(PHP_VERSION, '5.3', '<')) {
+            //if (version_compare(PHP_VERSION, '5.3', '<')) {
                 require_once 'listeners/lambda.php';
                 require_once 'listeners/const.php';
                 require_once 'listeners/varClassStatic.php';
+                require_once 'listeners/ternary.php';
                 require_once 'listeners/namespaces.php';
                 
                 $p->registerStreamManipulator(T_FUNCTION, 'prephp_lambda');
                 $p->registerStreamManipulator(T_CONST, 'prephp_const');
                 
                 $p->registerStreamManipulator(array(T_VARIABLE, T_DOLLAR), 'prephp_varClassStatic');
+                
+                $p->registerStreamManipulator(T_QUESTION, 'prephp_ternary');
                 
                 // namespaces
                 $p->registerSourcePreparator(array('Prephp_Namespace', 'reset'));
@@ -55,7 +58,7 @@
                 
                 $p->registerStreamManipulator(array(T_STRING, T_NS_SEPARATOR), array('Prephp_Namespace', 'resolve'));
                 $p->registerTokenCompiler(T_NS_C, array('Prephp_Namespace', 'NS_C'));
-            }
+            //}
             
             // PHP 5.4 simulators
             if (version_compare(PHP_VERSION, '5.4', '<')) {

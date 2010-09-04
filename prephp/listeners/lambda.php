@@ -7,7 +7,7 @@
         in php it is said to have really bad performance, memory leaks and other problems.
         Therefore we decided to define the functions as real php functions and replace the
         function call with the name of the function. This name is something like
-        prephp_lambda_{md5(mt_rand()}. In PHP a function can be called by calling a variable
+        prephp_lambda_{uniqid}. In PHP a function can be called by calling a variable
         with the function name. Exactly this behaviour is used. The virtual functions created
         this way are inserted at the beginning of the file the lambda function was defined in.
         

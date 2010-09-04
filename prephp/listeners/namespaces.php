@@ -150,8 +150,9 @@
                         throw new Prephp_Exception("NS: A ',' or ';' in an alias (use) declaration must be preceeded by a T_STRING");
                     }
                     
-                    self::$use[$as !== false ? $as : substr($current, strrpos($current, '\\') + 1)] = $current;
+                    self::$use[$as !== false ? $as : substr($current, strrpos($current, '\\') + 1)] = ($current[0] == '\\' ? '' : '\\') . $current;
                     $as = false;
+                    $current = '';
                 }
                 else {
                     throw new Prephp_Exception('NS: Found ' . $tokenStream[$i]->name . '. Only T_STRING, T_NS_SEPARATOR, T_AS and T_COMMA are allowed in an alias (use) declaration');
@@ -250,6 +251,11 @@
                 $ns .= $tokenStream[$i]->content;
             }
             
+            // type hint / catch
+            if ($tokenStream[$i]->is(T_VARIABLE) || $tokenStream[$i + 1]->is(T_VARIABLE)) {
+                return;
+            }
+            
             $tokenStream->extract($iStart, $i - 1); // we went one too far
             
             $current = self::$ns;
@@ -270,8 +276,13 @@
             }
             // unqualified (class aliases)
             else {
-                // apply class alias, if one exists
-                if (isset(self::$use[$ns])) {
+                // check that is class and then apply class alias if exists
+                if (isset(self::$use[$ns])
+                    && ($tokenStream[$tokenStream->skipWhitespace($iStart, true)]->is(T_NEW)
+                    || $tokenStream[$iStart]->is(T_PAAMAYIM_NEKUDOTAYIM)
+                    || $tokenStream[$iStart + 1]->is(T_PAAMAYIM_NEKUDOTAYIM)
+                    )
+                ) {
                     $ns = self::$use[$ns];
                 }
             }

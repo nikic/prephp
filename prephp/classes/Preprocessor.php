@@ -57,7 +57,7 @@
             
             // manipulate tokens
             foreach ($tokenStream as $i => $token) {
-                set_time_limit(2); // timeout (debug)
+                set_time_limit(3); // timeout (debug)
                 
                 do {
                     $loop = false;

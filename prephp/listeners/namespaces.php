@@ -42,12 +42,12 @@
                 
                 if ($tokenStream[$i]->is(T_NS_SEPARATOR)) {
                     if ($last == T_NS_SEPARATOR) {
-                        throw new Prephp_Exception('NS: A T_NS_SEPARATOR must not be followed by another T_NS_SEPARATOR');
+                        throw new Prephp_TokenException('NS: A T_NS_SEPARATOR must not be followed by another T_NS_SEPARATOR');
                     }
                 }
                 elseif ($tokenStream[$i]->is(T_STRING)) {
                     if ($last == T_STRING) {
-                        throw new Prephp_Exception('NS: Two T_STRING namespace parts must be separated by a T_NS_SEPARATOR');
+                        throw new Prephp_TokenException('NS: Two T_STRING namespace parts must be separated by a T_NS_SEPARATOR');
                     }
                 }
                 else {
@@ -75,7 +75,7 @@
                     $tokenStream->extract($iNS, $i - 1);
                 }
                 else {
-                    throw new Prephp_Exception("NS: A namespace declaration must be followed by ';' or '{'");
+                    throw new Prephp_TokenException("NS: A namespace declaration must be followed by ';' or '{'");
                 }
                 
                 // At this point one may notice, that prephp does allow mixing
@@ -109,10 +109,15 @@
         
         // register use
         public static function alias($tokenStream, $iUse) {
+            // lambda function, not alias
+            if ($tokenStream[$tokenStream->skipWhitespace($iUse)]->is(T_OPEN_ROUND)) {
+                return;
+            }
+            
             $iEOS = $tokenStream->find($iUse, T_SEMICOLON);
             
             if (false === $iEOS) {
-                throw new Prephp_Exception("NS: Alias (use) definition is not terminated by ';'");
+                throw new Prephp_TokenException("NS: Alias (use) definition is not terminated by ';'");
             }
             
             $last = T_USE;
@@ -129,7 +134,7 @@
                 }
                 elseif ($tokenStream[$i]->is(T_STRING)) {
                     if ($last == T_STRING) {
-                        throw new Prephp_Exception('NS: Two T_STRINGs in alias (use) declaration must be separated by a T_NS_SEPARATOR');
+                        throw new Prephp_TokenException('NS: Two T_STRINGs in alias (use) declaration must be separated by a T_NS_SEPARATOR');
                     }
                     
                     if ($last == T_AS) {
@@ -141,18 +146,18 @@
                 }
                 elseif ($tokenStream[$i]->is(T_NS_SEPARATOR)) {
                     if ($last == T_NS_SEPARATOR) {
-                        throw new Prephp_Exception('NS: A T_NS_SEPARATOR in an alias (use) declaration must not be preceeded by another T_NS_SEPARATOR');
+                        throw new Prephp_TokenException('NS: A T_NS_SEPARATOR in an alias (use) declaration must not be preceeded by another T_NS_SEPARATOR');
                     }
                     
                     if ($as !== false) {
-                        throw new Prephp_Exception('NS: The as section of an alias (use) declaration must not contain a T_NS_SEPARATOR');
+                        throw new Prephp_TokenException('NS: The as section of an alias (use) declaration must not contain a T_NS_SEPARATOR');
                     }
                     
                     $current .= $tokenStream[$i]->content;
                 }
                 elseif ($tokenStream[$i]->is(array(T_COMMA, T_SEMICOLON))) {
                     if ($last != T_STRING) {
-                        throw new Prephp_Exception("NS: A ',' or ';' in an alias (use) declaration must be preceeded by a T_STRING");
+                        throw new Prephp_TokenException("NS: A ',' or ';' in an alias (use) declaration must be preceeded by a T_STRING");
                     }
                     
                     self::$use[$as !== false ? $as : substr($current, strrpos($current, '\\') + 1)] = ($current[0] == '\\' ? '' : '\\') . $current;
@@ -160,7 +165,7 @@
                     $current = '';
                 }
                 else {
-                    throw new Prephp_Exception('NS: Found ' . $tokenStream[$i]->name . '. Only T_STRING, T_NS_SEPARATOR, T_AS and T_COMMA are allowed in an alias (use) declaration');
+                    throw new Prephp_TokenException('NS: Found ' . $tokenStream[$i]->name . '. Only T_STRING, T_NS_SEPARATOR, T_AS and T_COMMA are allowed in an alias (use) declaration');
                 }
                 
                 $last = $tokenStream[$i]->type;
@@ -181,7 +186,7 @@
             
             $iStart = $tokenStream->find($iName, T_OPEN_CURLY);
             if ($iStart === false) {
-                throw new Prephp_Exception("NS class registration: Unexpected END, expected '{'");
+                throw new Prephp_TokenException("NS class registration: Unexpected END, expected '{'");
             }
             $iEnd   = $tokenStream->complementaryBracket($iStart);
             

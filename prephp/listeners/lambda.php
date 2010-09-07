@@ -25,7 +25,7 @@
         
         // start of the function definition (including '{')
         if (false === $iDefinition = $tokenStream->find($iFunction, T_OPEN_CURLY)) {
-            throw new Prephp_Exception("Lambda-Listener: No function definition (couldn't find '{')");
+            throw new Prephp_TokenException("Lambda: No function definition (couldn't find '{')");
         }
         
         // function definition stream

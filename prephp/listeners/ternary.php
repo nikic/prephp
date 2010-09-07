@@ -44,7 +44,7 @@
         }
         
         if ($i == 0) {
-            throw new Prephp_Exception('ternary not terminated on left side');
+            throw new Prephp_TokenException('ternary not terminated on left side');
         }
         
         // we went one too far

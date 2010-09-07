@@ -53,7 +53,7 @@
                 $expecting = C_EXP_COMMA;
             }
             else {
-                throw new Prephp_Exception('Const: Found unexpected ' . $tokenStream[$i]->name);
+                throw new Prephp_TokenException('Const: Found unexpected ' . $tokenStream[$i]->name);
             }
         }
         

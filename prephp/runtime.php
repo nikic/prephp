@@ -1,18 +1,14 @@
 <?php	
-    // returns file to be included and prepares files
+    // returns file to be included
     function prephp_rt_prepareInclude($caller, $fileName) {
-        require_once './classes/Path.php';
+        require_once PREPHP_DIR . 'classes/Path.php';
         
-        $core = Prephp_Core::getInstance();
-        
-        $paths = Prephp_Path::possiblePaths($fileName, $caller, $core->getExecuter());
-        
-        foreach ($paths as $path) {
+        foreach (Prephp_Path::possiblePaths($fileName, $caller) as $path) {
             if (!file_exists($path)) {
                 continue;
             }
             
-            if (preg_match('#\.php5?$#', $path) && $inCache = $core->process($path)) {
+            if (substr($path, -4) == '.php' && $inCache = Prephp_Core::getInstance()->process($path)) {
                 return $inCache;
             }
             
@@ -23,16 +19,12 @@
         return $fileName;
     }
     
-    function prephp_rt_preparePath($path) {
-        require_once './classes/Path.php';
-        return Prephp_Path::normalize($path, dirname(Prephp_Core::getInstance()->getExecuter()));
-    }
-    
-    // func()[n] to prephp_functionArrayAccess(func(), n)
+    // get offset of an array
     function prephp_rt_arrayAccess($array, $index) {
         return $array[$index];
     }
     
+    // class to simulate SPL autoload behavior
     class Prephp_RT_Autoload {
         public static $functions = false;
         
@@ -91,4 +83,3 @@
             return false;
         }
     }
-?>

@@ -5,7 +5,6 @@
     
     class Prephp_Path
     {
-        private static $antiSlash = array('/' => '\\', '\\' => '/');
         private static $win;
         
         // initializes slashes and OS
@@ -16,11 +15,13 @@
         // returns all possible paths, where PHP will look whilst including
         // filename: filename to resolve
         // caller: the file calling the function
-        // executer: the entry file (the file called originally)
+        // cwd: current working directory or if not specified getcwd()
         // include_path: include_path or if not specified get_include_path()
-        public static function possiblePaths($filename, $caller, $executer, $include_path = null) {
-            $executer = dirname($executer);
+        public static function possiblePaths($filename, $caller, $cwd = null, $include_path = null) {
             $caller = dirname($caller);
+            if ($cwd === null) {
+                $cwd = getcwd();
+            }
             if ($include_path === null) {
                 $include_path = get_include_path();
             }
@@ -32,19 +33,17 @@
             $filename = self::normalizeSlashes($filename);
             
             if (self::isRelative($filename) || self::isAbsolute($filename)) {
-                return array(self::normalize($filename, $executer));
+                return array(self::normalize($filename, $cwd));
             }
                         
             $paths = array();
             
             if ($include_path != '') {
-                $include_paths = explode(PATH_SEPARATOR, $include_path);
-                
-                foreach ($include_paths as $path) {
+                foreach (explode(PATH_SEPARATOR, $include_path) as $path) {
                     try {
-                        $paths[] = self::normalize($path . DIRECTORY_SEPARATOR . $filename, $executer);
+                        $paths[] = self::normalize($path . DIRECTORY_SEPARATOR . $filename, $cwd);
                     }
-                    catch(InvalidArgumentException $e) {}
+                    catch(Exception $e) {}
                 }
             }
             
@@ -62,23 +61,29 @@
                 return $filename;
             }
             
-            // all further functions require normalized slashes;
+            // all further functions require normalized slashes
             $filename = self::normalizeSlashes($filename);
-            $cwd = self::normalizeSlashes($cwd);
             
             // if relative prepend cwd
             if (!self::isAbsolute($filename)) {
-                if (!self::isAbsolute($cwd) && !self::isStreamWrapper($cwd)) {
-                    throw new InvalidArgumentException('cwd is not absolute, not a stream wrapper or not specified!');
+                // if it is a stream wrapper append and don't do any further processing
+                if (self::isStreamWrapper($cwd)) {
+                    return $cwd . DIRECTORY_SEPARATOR . $filename;
+                }
+                
+                $cwd = self::normalizeSlashes($cwd);
+                
+                if (!self::isAbsolute($cwd))  {
+                    throw new InvalidArgumentException('cwd is not a stream wrapper, not absolute or not specified!');
                 }
                 
                 $filename = $cwd . DIRECTORY_SEPARATOR . $filename;
             }
             
-            $parts = explode(DIRECTORY_SEPARATOR, $filename);
+            $parts = array_reverse(explode(DIRECTORY_SEPARATOR, $filename));
             
-            $filename = array_shift($parts);
-            while ($part = array_shift($parts)) {
+            $filename = array_pop($parts);
+            while ($part = array_pop($parts)) {
                 if ($part == '.') {
                     continue;
                 }
@@ -98,14 +103,14 @@
         // normalizes slashes to self::$slash
         // filename: must be non-wrapper
         public static function normalizeSlashes($filename) {
-            return strtr($filename, self::$antiSlash[DIRECTORY_SEPARATOR], DIRECTORY_SEPARATOR);
+            return strtr($filename, DIRECTORY_SEPARATOR == '/' ? '\\' : '/', DIRECTORY_SEPARATOR);
         }
         
         // removes double slashes
         // filename: must be slash-normalized non-wrapper
         public static function stripDoubleSlashes($filename) {
-            return (self::isUNC($filename)?'\\':'') // do not strip \\ at beginning (UNC path)
-                    . preg_replace('#'.preg_quote(DIRECTORY_SEPARATOR).'{2,}#', DIRECTORY_SEPARATOR, $filename);
+            return (self::isUNC($filename) ? '\\' : '') // do not strip \\ at beginning (UNC path)
+                    . preg_replace('#' . preg_quote(DIRECTORY_SEPARATOR) . '{2,}#', DIRECTORY_SEPARATOR, $filename);
         }
         
         // checks if is relative path: (./ and ../)
@@ -153,4 +158,3 @@
     }
     
     Prephp_Path::init();
-?>

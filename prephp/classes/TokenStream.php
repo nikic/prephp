@@ -146,13 +146,31 @@
         public function findEOS($i, $reverse = false) {
             if ($reverse) { // find previous
                 while ($i--) {
+                    if ($this->tokens[$i]->is(T_SEMICOLON)
+                        && $this->tokens[$this->skipWhitespace($i)]->is(T_CASE, T_DEFAULT)) {
+                        while ($i--) {
+                            if ($this->tokens[$i]->is(T_SWITCH)) {
+                                return $this->skipWhitespace($i, true);
+                            } elseif ($this->tokens[$i]->is(T_CLOSE_ROUND, T_CLOSE_SQUARE, T_CLOSE_CURLY)) {
+                                $i = $this->complementaryBracket($i);
+                            }
+                        }
+                        
+                        return false;
+                    }
+                    
                     if ($this->tokens[$i]->is(T_SEMICOLON, T_OPEN_TAG)
                         || ($this->tokens[$i]->is(T_CLOSE_CURLY)
-                            && (!($next = $this->skipWhitespace($i)) // check that it's no lambda
-                                || !$this->tokens[$next]->is(T_COMMA, T_CLOSE_ROUND, T_SEMICOLON)
+                            && (!($next = $this->skipWhitespace($i))
+                                // check that it's no lambda
+                                // and not the } before else(if) or while (do/while)
+                                || !$this->tokens[$next]->is(T_COMMA, T_CLOSE_ROUND, T_SEMICOLON, T_ELSE, T_ELSEIF, T_WHILE)
                                 )
                         )
-                        || ($this->tokens[$i]->is(T_OPEN_CURLY) // check that it's no lambda
+                        || ($this->tokens[$i]->is(T_OPEN_CURLY)
+                            // check that it's not the { after a switch
+                            && !$this->tokens[$this->skipWhitespace($i)]->is(T_CASE, T_DEFAULT)
+                            // check that it's no lambda
                             && !$this->tokens[$this->complementaryBracket($i)]->is(T_COMMA, T_CLOSE_ROUND, T_SEMICOLON)
                         )
                     ) {

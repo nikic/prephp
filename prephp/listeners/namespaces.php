@@ -4,6 +4,11 @@
         // replace T_NS_SEPARATOR by
         const SEPARATOR = '__N__';
         
+        // if true it is assumed that all unqualified
+        // functions and constants which are defined globally
+        // are global
+        const assumeGlobal = true;
+        
         // current namespace
         private static $ns;
         
@@ -349,9 +354,20 @@
                 else {
                     $isFunction = $tokenStream[$iStart]->is(T_OPEN_ROUND);
                     
+                    // check whether defined as global function/constant
+                    if (self::assumeGlobal && ($isFunction ? function_exists($ns) : defined($ns))) {
+                        $tokenStream->insert($iStart,
+                            new Prephp_Token(
+                                T_STRING,
+                                $ns
+                            )
+                        );
+                        return;
+                    }
+                    
                     $tVariable = new Prephp_Token(
                         T_VARIABLE,
-                        uniqid('$prephp_var_')
+                        '$prephp_' . ($isFunction ? 'f' : 'c') . '_' . $ns
                     );
                     
                     if ($isFunction) {
@@ -407,4 +423,3 @@
             }
         }
     }
-?>

@@ -4,7 +4,12 @@ Options +FollowSymLinks
 #disallow access to cache and to prephp files
 RewriteRule ^cache/ - [F]
 
-# prephp gets the variables
-# prefixed with prephp_
-# path: relative to this .htaccess
-RewriteRule ^(.*\.php5?)$ prephp/prephp.php?prephp_path=$1 [QSA,L]
+# redirect all requests to the test/ directory to prephp
+# check whether the file exists
+RewriteCond %{REQUEST_FILENAME} -s
+# and then pass the absolute path
+RewriteRule ^test/.*\.php$ prephp/prephp.php?prephp_path=%{REQUEST_FILENAME} [QSA,L]
+
+# template for redirecting all request within a directory:
+# RewriteCond %{REQUEST_FILENAME} -s
+# RewriteRule \.php$ path/to/prephp.php?prephp_path=%{REQUEST_FILENAME} [QSA,L]

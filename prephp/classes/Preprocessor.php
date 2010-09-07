@@ -1,11 +1,11 @@
 <?php
-    require_once 'TokenStream.php';
+    require_once PREPHP_DIR . 'classes/TokenStream.php';
     
     class Prephp_Preprocessor
     {
-        protected $sourcePreparators = array();
+        protected $sourcePreparators  = array();
         protected $streamManipulators = array();
-        protected $tokenCompilers = array();
+        protected $tokenCompilers     = array();
         
         // sourcePreparators get the source passed as only argument
         // and must return some source
@@ -25,10 +25,6 @@
                 throw new InvalidArgumentException('Stream Manipulator not callable!');
             }
             
-            if (!is_array($tokens)) {
-                $tokens = array($tokens);
-            }
-            
             $this->streamManipulators[] = array($callback, $tokens);
         }
         
@@ -39,12 +35,13 @@
                 throw new InvalidArgumentException('Token Compiler not callable!');
             }
             
-            if (!is_array($tokens)) {
-                $tokens = array($tokens);
+            if (is_array($tokens)) {
+                foreach ($tokens as $token) {
+                    $this->tokenCompilers[$token][] = $callback;
+                }
             }
-            
-            foreach ($tokens as $token) {
-                $this->tokenCompilers[$token][] = $callback;
+            else {
+                $this->tokenCompilers[$tokens][] = $callback;
             }
         }
         
@@ -60,7 +57,7 @@
             
             // manipulate tokens
             foreach ($tokenStream as $i => $token) {
-                set_time_limit(3); // timeout (debug)
+                set_time_limit(2); // timeout (debug)
                 
                 do {
                     $loop = false;
@@ -81,7 +78,7 @@
             foreach ($tokenStream as $token) {
                 if (isset($this->tokenCompilers[$token->type])) {
                     foreach ($this->tokenCompilers[$token->type] as $compiler) {
-                        $ret = $compiler($token);
+                        $ret = call_user_func($compiler, $token);
                         if ($ret !== false) {
                             $token->content = $ret;
                         }
@@ -94,4 +91,3 @@
             return $source;
         }
     }
-?>

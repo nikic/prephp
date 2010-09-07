@@ -56,6 +56,8 @@
                 $p->registerStreamManipulator(array(T_FUNCTION, T_CONST), array('Prephp_Namespace', 'registerOther'));
                 
                 $p->registerStreamManipulator(array(T_STRING, T_NS_SEPARATOR), array('Prephp_Namespace', 'resolve'));
+                $p->registerStreamManipulator(T_NEW, array('Prephp_Namespace', 'resolveNew'));
+                
                 $p->registerTokenCompiler(T_NS_C, array('Prephp_Namespace', 'NS_C'));
             }
             

@@ -422,4 +422,55 @@
                 }
             }
         }
+        
+        // resolve a variable class instantiation
+        // (will implement other stuff later)
+        public static function resolveNew($tokenStream, $i) {
+            $iName = $tokenStream->skipWhitespace($i);
+            
+            // not a variable class instantiation
+            if ($iName === false || !$tokenStream[$iName]->is(T_VARIABLE)) {
+                return;
+            }
+            
+            // remove variable and fetch varname
+            $tOldVar = $tokenStream->extract($iName);
+            $varName = substr($tOldVar->content, 1);
+            
+            $tVariable = new Prephp_Token(
+                T_VARIABLE,
+                '$prephp_c_' . $varName
+            );
+            
+            // insert temporary variable instead
+            $tokenStream->insert($iName, $tVariable);
+            
+            // insert classname preparation code
+            $tokenStream->insert($tokenStream->findEOS($i, true) + 1, array(
+                new Prephp_Token(
+                    T_WHITESPACE,
+                    "\n"
+                ),
+                $tVariable,
+                '=',
+                new Prephp_Token(
+                    T_STRING,
+                    'str_replace'
+                ),
+                '(',
+                    new Prephp_Token(
+                        T_CONSTANT_ENCAPSED_STRING,
+                        "'" . self::SEPARATOR . "'"
+                    ),
+                    ',',
+                    new Prephp_Token(
+                        T_CONSTANT_ENCAPSED_STRING,
+                        "'\\'"
+                    ),
+                    ',',
+                    $tOldVar,
+                ')',
+                ';'
+            ));
+        }
     }

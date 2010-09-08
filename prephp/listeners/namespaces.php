@@ -7,7 +7,7 @@
         // if true it is assumed that all unqualified
         // functions and constants which are defined globally
         // are global
-        const assumeGlobal = true;
+        const assumeGlobal = false;
         
         // current namespace
         private static $ns;
@@ -66,7 +66,10 @@
                 
                 // semicolon style
                 if ($tokenStream[$i]->is(T_SEMICOLON)) {
-                    // remove the ; too
+                    // remove the ; and the whitespace after it (if there is any)
+                    if ($tokenStream[$i + 1]->is(T_WHITESPACE)) {
+                        ++$i;
+                    }
                     $tokenStream->extract($iNS, $i);
                 }
                 // bracket style
@@ -171,7 +174,17 @@
                 $last = $tokenStream[$i]->type;
             }
             
+            // get rig of whitespace, too
+            if ($tokenStream[$iEOS + 1]->is(T_WHITESPACE)) {
+                ++$iEOS;
+            }
+            
             $tokenStream->extract($iUse, $iEOS);
+            
+            // process multiple use statements next to each other
+            if ($tokenStream[$iUse]->is(T_USE)) {
+                self::alias($tokenStream, $iUse);
+            }
         }
     
         // register classes

@@ -47,7 +47,7 @@
                 $p->registerStreamManipulator(T_QUESTION, 'prephp_ternary');
                 
                 // namespaces
-                $p->registerSourcePreparator(array('Prephp_Namespace', 'reset'));
+                $p->registerStreamPreparator(array('Prephp_Namespace', 'reset'));
                 
                 $p->registerStreamManipulator(T_NAMESPACE, array('Prephp_Namespace', 'NS'));
                 $p->registerStreamManipulator(T_USE, array('Prephp_Namespace', 'alias'));
@@ -76,6 +76,7 @@
             
             // Core
             $p->registerStreamManipulator(array(T_REQUIRE, T_INCLUDE, T_REQUIRE_ONCE, T_INCLUDE_ONCE), 'prephp_include');
+            $p->registerStreamManipulator(T_EVAL, 'prephp_eval');
             
             $p->registerTokenCompiler(T_LINE, 'prephp_LINE');
             $p->registerTokenCompiler(T_FILE, 'prephp_FILE');
@@ -144,7 +145,7 @@
                 throw new Prephp_FileException('Could not file_get_contents ' . $sourcePath);
             }
             
-            $source = $this->getPreprocessor()->preprocess($source);
+            $source = $this->getPreprocessor()->process($source);
             
             if (!file_exists(dirname($cachePath)) && !mkdir(dirname($cachePath), 0777, true)) {
                 throw new Prephp_FileException('Cache directory ' . dirname($cachePath) . ' didn\'t exist and couldn\'t be created');
@@ -156,7 +157,7 @@
         }
         
         public function toCachePath($sourcePath) {
-            $hash = md5(dirname($sourcePath));
+            $hash = md5(dirname(realpath($sourcePath)));
             return realpath(PREPHP_DIR . Prephp_Core::cacheDir) . DIRECTORY_SEPARATOR . $hash . DIRECTORY_SEPARATOR . basename($sourcePath);
         }
         

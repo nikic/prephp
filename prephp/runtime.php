@@ -19,6 +19,19 @@
         return $fileName;
     }
     
+    // returns preprocessed eval code
+    function prephp_rt_prepareEval($code) {
+        $cachePath = PREPHP_DIR . Prephp_Core::cacheDir . DIRECTORY_SEPARATOR . md5($code) . '.php';
+        if ((!is_file($cachePath)
+            || (false === $compiledCode = file_get_contents($cachePath)))
+            && (false === file_put_contents($cachePath, $compiledCode = Prephp_Core::getInstance()->getPreprocessor()->process($code)))
+        ) {
+            throw new Prephp_FileException('Cannot write to ' . $cachePath);
+        }
+        
+        return $compiledCode;
+    }
+    
     // get offset of an array
     function prephp_rt_arrayAccess($array, $index) {
         return $array[$index];

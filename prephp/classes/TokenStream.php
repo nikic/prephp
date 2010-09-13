@@ -4,6 +4,23 @@
     
     class Prephp_TokenStream implements Countable, ArrayAccess, Iterator
     {
+        /**
+        * contains complementary brackets
+        * the first value of the array are all tokens to look for
+        * the second value is the value for the closing bracket
+        */
+        protected static $complementaryBrackets = array(
+            T_OPEN_ROUND  => array(array(T_OPEN_ROUND, T_CLOSE_ROUND), T_CLOSE_ROUND),
+            T_OPEN_SQUARE => array(array(T_OPEN_SQUARE, T_CLOSE_SQUARE), T_CLOSE_SQUARE),
+            T_OPEN_CURLY  => array(array(T_OPEN_CURLY, T_CURLY_OPEN, T_DOLLAR_OPEN_CURLY_BRACES, T_CLOSE_CURLY), T_CLOSE_CURLY),
+            T_CURLY_OPEN  => array(array(T_OPEN_CURLY, T_CURLY_OPEN, T_DOLLAR_OPEN_CURLY_BRACES, T_CLOSE_CURLY), T_CLOSE_CURLY),
+            T_DOLLAR_OPEN_CURLY_BRACES  => array(array(T_OPEN_CURLY, T_CURLY_OPEN, T_DOLLAR_OPEN_CURLY_BRACES, T_CLOSE_CURLY), T_CLOSE_CURLY),
+            
+            T_CLOSE_ROUND  => array(array(T_OPEN_ROUND, T_CLOSE_ROUND), T_OPEN_ROUND),
+            T_CLOSE_SQUARE => array(array(T_OPEN_SQUARE, T_CLOSE_SQUARE), T_OPEN_SQUARE),
+            T_CLOSE_CURLY  => array(array(T_OPEN_CURLY, T_CURLY_OPEN, T_DOLLAR_OPEN_CURLY_BRACES, T_CLOSE_CURLY), T_OPEN_CURLY),
+        );
+        
         protected $tokens = array();
         
         /**
@@ -201,35 +218,28 @@
         * @throws TokenException on incorrect nesting
         */
         public function complementaryBracket($i) {
-            $complements = array(
-                T_OPEN_ROUND   => T_CLOSE_ROUND,
-                T_OPEN_SQUARE  => T_CLOSE_SQUARE,
-                T_OPEN_CURLY   => T_CLOSE_CURLY,
-                T_CLOSE_ROUND  => T_OPEN_ROUND,
-                T_CLOSE_SQUARE => T_OPEN_SQUARE,
-                T_CLOSE_CURLY  => T_OPEN_CURLY,
-            );
-            
             if ($this->tokens[$i]->is(T_CLOSE_ROUND, T_CLOSE_SQUARE, T_CLOSE_CURLY)) {
                 $reverse = true; // backwards search
-            } elseif ($this->tokens[$i]->is(T_OPEN_ROUND, T_OPEN_SQUARE, T_OPEN_CURLY)) {
+            } elseif ($this->tokens[$i]->is(T_OPEN_ROUND, T_OPEN_SQUARE, T_OPEN_CURLY, T_CURLY_OPEN, T_DOLLAR_OPEN_CURLY_BRACES)) {
                 $reverse = false; // forwards search
             } else {
                 throw new Prephp_TokenException('Not a bracket');
             }
                 
-            $type = $this->tokens[$i]->type;
+            $brackets = self::$complementaryBrackets[$this->tokens[$i]->type];
+            // $brackets[0] contains opening and closing brackets
+            // $brackets[1] contains only closing brackets
             
             $depth = 1;
             while ($depth > 0) {
-                if (false === $i = $this->find($i, array($type, $complements[$type]), $reverse)) {
+                if (false === $i = $this->find($i, $brackets[0], $reverse)) {
                     throw new Prephp_TokenException('Opening and closing brackets not matching');
                 }
                 
-                if ($this->tokens[$i]->is($type)) { // opening
-                    ++$depth;
-                } else { // closing
+                if ($this->tokens[$i]->is($brackets[1])) { // closing bracket
                     --$depth;
+                } else { // opening bracket
+                    ++$depth;
                 }
             }
 

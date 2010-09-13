@@ -1,4 +1,28 @@
 <?php
+    /*function prephp_arrayAccess($tokenStream, $i) {
+        $iCallStart=%
+
+        do {
+            % (T_STRING | '$'* T_VARIABLE) _ ('[' .. ']' | '(' .. $iCallEnd=')') _
+        } while (% (T_PAAMAYIM_NEKUDOTAYIM | T_OBJECT_OPERATOR) _);
+        
+        %=$iCallEnd ')'
+        %=$i '['
+        
+        $sArrayAccess = $tokenStream->extract(%, % ..);
+        $sArrayAccess->extract(0); // remove "["
+        $sArrayAccess->extract(count($sArrayAccess)-1); // remove "]"
+        
+        $sCall = $tokenStream->extract($iCallStart, $iCallEnd);
+        
+        // now insert prephp_rt_arrayAccess()
+        $tokenStream->insert($iCallStart,
+            %{ prephp_rt_array_Access(@$sCall, @$sArrayAccess) }%
+        );
+        
+        return true;
+    }*/
+    
     function prephp_arrayAccess($tokenStream, $iCallStart) {
         $i = $iCallStart;
         

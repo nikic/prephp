@@ -1,6 +1,6 @@
 <?php	
     function prephp_LINE($token) {
-        return $token->line;
+        return (string) $token->line;
     }
     
     function prephp_FILE($token) {
@@ -15,7 +15,6 @@
         if ($token->content == 'PREPHP__FILE__') {
             return '__FILE__';
         }
-        return false;
     }
     
     function prephp_include($tokenStream, $i) {
@@ -24,7 +23,7 @@
         
         $tokenStream->insert($i,
             array(
-                !$tokenStream[$i]->is(T_WHITESPACE) ? new Prephp_Token(T_WHITESPACE, ' ') : null,
+                !$tokenStream[$i - 1]->is(T_WHITESPACE) ? new Prephp_Token(T_WHITESPACE, ' ') : null,
                 new Prephp_Token(
                     T_STRING,
                     'prephp_rt_prepareInclude'
@@ -39,4 +38,18 @@
                 ')',
             )
         );
+    }
+    
+    function prephp_eval($tokenStream, $i) {
+        $iOpen  = $tokenStream->skipWhitespace($i);
+        $iClose = $tokenStream->complementaryBracket($iOpen);
+        
+        $tokenStream->insert($iClose, ')');
+        $tokenStream->insert($iOpen + 1, array(
+            new Prephp_Token(
+                T_STRING,
+                'prephp_rt_prepareEval'
+            ),
+            '(',
+        ));
     }
